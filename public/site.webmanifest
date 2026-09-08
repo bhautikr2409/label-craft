@@ -1,0 +1,23 @@
+{
+  "name": "LabelCraft",
+  "short_name": "LabelCraft",
+  "description": "Free private shipping-label tools for marketplace sellers. No uploads.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f3f7f6",
+  "theme_color": "#0f766e",
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/img/pdfcraft-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

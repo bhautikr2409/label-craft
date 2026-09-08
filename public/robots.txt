@@ -1,0 +1,5 @@
+# LabelCraft — https://labelcraft.netlify.app
+User-agent: *
+Allow: /
+
+Sitemap: https://labelcraft.netlify.app/sitemap.xml

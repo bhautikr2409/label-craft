@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://labelcraft.netlify.app/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://labelcraft.netlify.app/tools</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/about</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/add-logo</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/amazon-sku</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/contact</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/guide</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/label-crop</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/meesho-sort</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/privacy</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://labelcraft.netlify.app/terms</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+</urlset>

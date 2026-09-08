@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #0f766e;
+  --brand-hover: #0d9488;
+  --brand-soft: #ccfbf1;
+  --brand-ink: #134e4a;
+  --page-bg: #f3f7f6;
+  --surface: #ffffff;
+  --ink: #1e293b;
+  --muted: #64748b;
+}
+
+body {
+  color: var(--ink);
+  background: var(--page-bg);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
