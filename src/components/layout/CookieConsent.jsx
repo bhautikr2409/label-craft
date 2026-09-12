@@ -1,29 +1,35 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SITE_NAME } from '../../constants/site';
-
-const STORAGE_KEY = 'ecomcrop_cookie_consent_v1';
+import {
+  CONSENT_STORAGE_KEY,
+  grantAnalyticsConsent,
+  hasAnalyticsConsent,
+  initGoogleAnalytics,
+} from '../../lib/analytics';
 
 /**
- * Lightweight consent banner for AdSense / analytics cookies (EU-friendly notice).
+ * Consent banner for analytics / AdSense cookies.
+ * GA4 loads only after the visitor accepts (or already accepted previously).
  */
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     try {
-      if (!localStorage.getItem(STORAGE_KEY)) setVisible(true);
+      if (!localStorage.getItem(CONSENT_STORAGE_KEY)) {
+        setVisible(true);
+      } else if (hasAnalyticsConsent()) {
+        initGoogleAnalytics();
+      }
     } catch {
       setVisible(true);
     }
   }, []);
 
   const accept = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, 'accepted');
-    } catch {
-      /* ignore */
-    }
+    grantAnalyticsConsent();
+    initGoogleAnalytics();
     setVisible(false);
   };
 
@@ -37,8 +43,9 @@ export default function CookieConsent() {
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-relaxed text-slate-600">
-          {SITE_NAME} uses cookies for essential site functions and may use Google AdSense cookies
-          to show ads. PDF files you process stay in your browser and are never uploaded.{' '}
+          {SITE_NAME} uses cookies for essential site functions, Google Analytics (traffic
+          measurement), and may use Google AdSense cookies to show ads. PDF files you process stay
+          in your browser and are never uploaded.{' '}
           <Link to="/privacy" className="font-semibold text-teal-700 hover:underline">
             Privacy Policy
           </Link>

@@ -63,14 +63,46 @@ export default function PrivacyPolicy() {
                 send via the contact page.
               </li>
               <li>
-                <strong>Cookies:</strong> identifiers used for essential preferences and advertising
-                partners such as Google AdSense.
+                <strong>Cookies:</strong> identifiers used for essential preferences, Google
+                Analytics, and advertising partners such as Google AdSense.
               </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">4. Google AdSense & cookies</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">4. Google Analytics</h2>
+            <p className="mb-3">
+              {SITE_NAME} may use Google Analytics 4 to understand aggregated traffic (pages viewed,
+              approximate location, device/browser type, and referral sources). Analytics cookies
+              load after you accept the cookie notice. We configure Analytics with IP anonymization
+              where supported. Google may process this data as described in{' '}
+              <a
+                href="https://policies.google.com/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-teal-700 hover:underline"
+              >
+                Google&apos;s Privacy Policy
+              </a>
+              . You can limit Analytics via browser controls or Google&apos;s{' '}
+              <a
+                href="https://tools.google.com/dlpage/gaoptout"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-teal-700 hover:underline"
+              >
+                Analytics opt-out browser add-on
+              </a>
+              .
+            </p>
+            <p className="mb-3">
+              Analytics does <strong>not</strong> receive the contents of shipping-label PDFs or
+              logos you process in the tools.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">5. Google AdSense & cookies</h2>
             <p className="mb-3">
               This site may use Google AdSense to display advertisements. Third-party vendors,
               including Google, use cookies to serve ads based on your prior visits to this and other
@@ -106,7 +138,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">5. Data security</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">6. Data security</h2>
             <p>
               Because documents stay on your machine, they are not exposed through server
               transmission for processing. Site traffic uses HTTPS/TLS. No method of transmission
@@ -116,7 +148,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">6. Children&apos;s privacy</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">7. Children&apos;s privacy</h2>
             <p>
               {SITE_NAME} is not directed at children under 13. We do not knowingly collect personal
               information from children.
@@ -124,7 +156,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">7. Your rights</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">8. Your rights</h2>
             <p>
               Depending on your location, you may have rights to access or delete analytical or
               contact data we hold. We do not store your PDF files, so there is no document data to
@@ -133,7 +165,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">8. Contact</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">9. Contact</h2>
             <p>
               Questions about this policy? Email{' '}
               <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-teal-700 hover:underline">

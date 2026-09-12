@@ -22,6 +22,13 @@ export const CONTACT_PATH = '/contact';
 export const LOCALE = 'en_US';
 export const LANGUAGE = 'en';
 
+/**
+ * Google Analytics 4 Measurement ID (G-XXXXXXXX).
+ * Set in `.env` as VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX then restart `npm run dev`.
+ * Leave empty to disable analytics in local/dev until configured.
+ */
+export const GA_MEASUREMENT_ID = String(import.meta.env.VITE_GA_MEASUREMENT_ID || '').trim();
+
 /** Build a canonical absolute URL for a site path. */
 export function absoluteUrl(path = '/') {
   const origin = SITE_URL.replace(/\/$/, '');

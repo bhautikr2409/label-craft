@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
 import ScrollToTop from './components/ScrollToTop';
+import GoogleAnalytics from './components/analytics/GoogleAnalytics';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import CookieConsent from './components/layout/CookieConsent';
@@ -36,6 +37,7 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <GoogleAnalytics />
       <ErrorBoundary>
         <div className="flex min-h-screen flex-col bg-[var(--page-bg)] text-slate-800 antialiased">
           <Toaster position="top-center" />
