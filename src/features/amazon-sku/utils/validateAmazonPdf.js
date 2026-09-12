@@ -53,7 +53,7 @@ export async function validateAmazonPdfFile(file) {
     if (/password|encrypt/i.test(msg)) {
       return {
         valid: false,
-        error: 'This PDF is password-protected. Please unlock it using Unlock PDF first.',
+        error: 'This PDF is password-protected. Please unlock it first, then upload again.',
       };
     }
     return { valid: false, error: 'Failed to read PDF. File may be corrupted or invalid.' };

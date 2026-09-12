@@ -22,7 +22,7 @@ export default function TermsOfService() {
           Terms of Service
         </h1>
         <p className="mb-8 text-sm text-slate-500">
-          Last updated: August 8, 2026 · Website: {SITE_URL.replace('https://', '')}
+          Last updated: September 12, 2026 · Website: {SITE_URL.replace('https://', '')}
         </p>
 
         <div className="space-y-8 leading-relaxed text-slate-700">
@@ -37,10 +37,11 @@ export default function TermsOfService() {
           <section>
             <h2 className="mb-3 text-xl font-bold text-slate-800">2. Description of service</h2>
             <p>
-              {SITE_NAME} provides free, browser-based PDF utilities (including merge, split,
-              compress, crop, convert, edit, organize, protect, and unlock). Document processing
-              happens client-side via JavaScript. Files are not uploaded, processed, or stored on our
-              servers for tool operations.
+              {SITE_NAME} provides free, browser-based shipping-label tools for marketplace sellers,
+              including Label Crop (Flipkart &amp; Meesho), Sort Meesho Labels, Amazon SKU Injector,
+              and Add Logo to PDF. Document processing happens client-side via JavaScript. Label PDFs
+              and logo images are not uploaded, processed, or stored on our servers for tool
+              operations.
             </p>
           </section>
 
@@ -51,7 +52,9 @@ export default function TermsOfService() {
               <li>Process files that contain malware or harmful code.</li>
               <li>Attempt to disrupt or compromise the integrity of the application.</li>
               <li>Use automated scraping or bots against the interface without permission.</li>
-              <li>Use Unlock PDF on documents you are not authorized to open.</li>
+              <li>
+                Process shipping documents or order PDFs you are not authorized to access or print.
+              </li>
             </ul>
           </section>
 
@@ -60,7 +63,7 @@ export default function TermsOfService() {
             <p>
               Software, designs, branding, and icons are the property of {SITE_NAME} and its
               creators. You receive a limited, non-exclusive license to use the tools for personal or
-              commercial PDF work. You retain all rights to your own documents.
+              commercial packing and shipping-label work. You retain all rights to your own documents.
             </p>
           </section>
 

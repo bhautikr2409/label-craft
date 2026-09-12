@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SITE_NAME } from '../../constants/site';
 
-const STORAGE_KEY = 'labelcraft_cookie_consent_v1';
+const STORAGE_KEY = 'ecomcrop_cookie_consent_v1';
 
 /**
  * Lightweight consent banner for AdSense / analytics cookies (EU-friendly notice).

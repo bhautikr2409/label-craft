@@ -107,7 +107,7 @@ export default function ContactUs() {
             Contact {SITE_NAME}
           </h1>
           <p className="text-slate-500">
-            Send feedback or questions about LabelCraft. Messages go to{' '}
+            Send feedback or questions about EcomCrop. Messages go to{' '}
             <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-teal-700 hover:underline">
               {CONTACT_EMAIL}
             </a>
@@ -193,9 +193,7 @@ export default function ContactUs() {
           </button>
 
           <p className="text-center text-xs text-slate-400">
-            First-time setup: check{' '}
-            <span className="font-medium text-slate-500">{CONTACT_EMAIL}</span> for a FormSubmit
-            confirmation email and activate the form.
+            We reply to the email address you enter above. Typical response time is 1–2 business days.
           </p>
         </form>
       </div>

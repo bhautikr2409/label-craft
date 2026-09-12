@@ -57,8 +57,8 @@ function ToolCard({ tool }) {
 
 export default function ToolsCatalog({
   showHero = false,
-  title = 'All PDF tools',
-  subtitle = 'Free tools that run in your browser. Pick a tool to get started.',
+  title = 'All seller label tools',
+  subtitle = 'Free shipping-label tools that run in your browser. Pick a tool to get started.',
 }) {
   const [searchParams] = useSearchParams();
   const [activeCategory, setActiveCategory] = useState('all');

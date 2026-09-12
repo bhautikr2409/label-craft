@@ -1,5 +1,8 @@
-# LabelCraft — https://labelcraft.netlify.app
+# EcomCrop — https://ecomcrop.in
 User-agent: *
 Allow: /
 
-Sitemap: https://labelcraft.netlify.app/sitemap.xml
+# Keep policy and tool pages crawlable; SPA assets are fine to index via HTML routes.
+Disallow: /404
+
+Sitemap: https://ecomcrop.in/sitemap.xml

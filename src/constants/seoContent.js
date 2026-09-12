@@ -1,4 +1,6 @@
-import { SITE_NAME, SITE_URL } from './site';
+import { SITE_NAME, SITE_URL, absoluteUrl } from './site';
+
+export { absoluteUrl };
 
 export const TOOL_SEO = {
   'label-crop': {
@@ -36,6 +38,10 @@ export const TOOL_SEO = {
       {
         q: 'Is order data sent online?',
         a: 'No. Label detection and cropping run in your browser only.',
+      },
+      {
+        q: 'What output size should I pick?',
+        a: 'Use 4×6 inch for most Indian thermal printers (100×150 mm). Choose 4×5 only if your sticker stock is that size, or “Cropped only” to keep the label aspect without resizing.',
       },
     ],
   },
@@ -92,7 +98,7 @@ export const TOOL_SEO = {
     h1: 'Add Logo to PDF',
     eyebrow: 'Add Logo Tool',
     intro:
-      'Upload a PDF, then your logo or brand image. LabelCraft finds the blank area under the content and places the logo there on every page — same position throughout.',
+      'Upload a PDF, then your logo or brand image. EcomCrop finds the blank area under the content and places the logo there on every page — same position throughout.',
     related: ['label-crop', 'meesho-sort', 'amazon-sku'],
     sections: [
       {
@@ -117,6 +123,10 @@ export const TOOL_SEO = {
       {
         q: 'What image formats are supported?',
         a: 'JPG, PNG, and WEBP. Processing stays in your browser — files are not uploaded to a server.',
+      },
+      {
+        q: 'Will the logo cover barcodes?',
+        a: 'EcomCrop places the logo in the detected bottom white band and keeps aspect ratio. Always preview a printed sample before a full run.',
       },
     ],
   },
@@ -178,46 +188,46 @@ export const STATIC_SEO = {
     path: '/tools',
     title: `All Seller Label Tools | ${SITE_NAME}`,
     description:
-      'Browse every LabelCraft tool: Label Crop, Sort Meesho Labels, Amazon SKU Injector, and Add Logo. Free and private in your browser.',
+      'Browse every EcomCrop tool: Label Crop, Sort Meesho Labels, Amazon SKU Injector, and Add Logo. Free and private in your browser.',
     keywords: 'seller label tools, meesho flipkart amazon labels',
   },
   about: {
     path: '/about',
     title: `About ${SITE_NAME} — Privacy-First Label Toolkit`,
     description:
-      'Learn why LabelCraft processes shipping labels in your browser, never on a server.',
-    keywords: 'about labelcraft, private shipping label tools',
+      'Learn why EcomCrop processes shipping labels in your browser, never on a server.',
+    keywords: 'about ecomcrop, private shipping label tools',
   },
   contact: {
     path: '/contact',
     title: `Contact ${SITE_NAME} — Support & Feedback`,
-    description: `Contact the LabelCraft team for support or feedback. We reply by email.`,
-    keywords: 'contact labelcraft, seller label tools support',
+    description: `Contact the EcomCrop team for support or feedback. We reply by email.`,
+    keywords: 'contact ecomcrop, seller label tools support',
   },
   privacy: {
     path: '/privacy',
     title: `Privacy Policy | ${SITE_NAME}`,
     description:
-      'LabelCraft privacy policy: shipping label PDFs are processed locally. Learn how cookies work on our site.',
-    keywords: 'labelcraft privacy policy',
+      'EcomCrop privacy policy: shipping label PDFs are processed locally. Learn how cookies work on our site.',
+    keywords: 'ecomcrop privacy policy',
   },
   terms: {
     path: '/terms',
     title: `Terms of Service | ${SITE_NAME}`,
     description: `Terms of use for ${SITE_NAME} free browser-based shipping label tools.`,
-    keywords: 'labelcraft terms of service',
+    keywords: 'ecomcrop terms of service',
   },
   guide: {
     path: '/guide',
     title: `Seller Label Help Guide — How to Use ${SITE_NAME}`,
     description:
-      'Step-by-step guides for Flipkart/Meesho label crop, Meesho SKU sort, Amazon SKU injection, and adding a shop logo.',
-    keywords: 'meesho label guide, flipkart label crop, amazon sku injector help',
+      'Step-by-step guides for Flipkart/Meesho label crop, Meesho SKU sort, Amazon SKU injection, shop logos, and thermal packing tips.',
+    keywords: 'meesho label guide, flipkart label crop, amazon sku injector help, ecomcrop guides',
   },
   notFound: {
     path: '/404',
     title: `Page Not Found | ${SITE_NAME}`,
-    description: 'The page you requested does not exist. Browse seller label tools on LabelCraft.',
+    description: 'The page you requested does not exist. Browse seller label tools on EcomCrop.',
     keywords: '404',
     noIndex: true,
   },
@@ -225,10 +235,4 @@ export const STATIC_SEO = {
 
 export function getToolSeo(toolId) {
   return TOOL_SEO[toolId] || null;
-}
-
-export function absoluteUrl(path = '/') {
-  const origin = SITE_URL.replace(/\/$/, '');
-  if (!path.startsWith('/')) return `${origin}/${path}`;
-  return `${origin}${path === '/' ? '/' : path}`;
 }

@@ -4,7 +4,7 @@ import { TOOLS } from '../../constants/toolsCatalog';
 const COMPANY_LINKS = [
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
-  { to: '/guide', label: 'Help & Guide' },
+  { to: '/guide', label: 'Help & Guides' },
   { to: '/privacy', label: 'Privacy Policy' },
   { to: '/terms', label: 'Terms of Service' },
 ];
@@ -38,7 +38,7 @@ export default function Footer() {
                 </svg>
               </span>
               <span className="text-lg font-extrabold tracking-tight text-white">
-                Label<span className="text-teal-400">Craft</span>
+                Ecom<span className="text-teal-400">Crop</span>
               </span>
             </Link>
             <p className="mb-5 max-w-sm text-sm leading-relaxed text-slate-400">
@@ -96,7 +96,7 @@ export default function Footer() {
 
       <div className="border-t border-slate-800/80">
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-3 px-4 py-5 text-xs text-slate-500 sm:flex-row sm:items-center sm:px-6">
-          <p>© {currentYear} LabelCraft. All rights reserved.</p>
+          <p>© {currentYear} EcomCrop. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link to="/privacy" className="transition-colors hover:text-slate-300">
               Privacy

@@ -23,7 +23,7 @@ export default function PrivacyPolicy() {
           Privacy Policy
         </h1>
         <p className="mb-8 text-sm text-slate-500">
-          Last updated: August 8, 2026 · Website: {SITE_URL.replace('https://', '')}
+          Last updated: September 12, 2026 · Website: {SITE_URL.replace('https://', '')}
         </p>
 
         <div className="space-y-8 leading-relaxed text-slate-700">
@@ -32,14 +32,14 @@ export default function PrivacyPolicy() {
             <p>
               Welcome to {SITE_NAME} ({SITE_URL}). We value your privacy and are committed to
               protecting your personal data. This policy explains how we collect, use, and protect
-              information when you use our client-side PDF tools.
+              information when you use our client-side shipping-label tools.
             </p>
           </section>
 
           <section className="rounded-2xl border border-teal-200 bg-teal-50/70 p-5 sm:p-6">
             <h2 className="mb-2 text-xl font-bold text-teal-900">2. Zero-server file privacy</h2>
             <p className="font-medium text-teal-950">
-              PDF documents, images, and Markdown you process are handled locally on your device
+              Shipping-label PDFs and logo images you process are handled locally on your device
               with client-side libraries. Files are never uploaded to our servers, storage, or
               databases for processing. Closing the tab or choosing a new file clears documents from
               browser memory.

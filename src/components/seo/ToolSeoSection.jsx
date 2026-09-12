@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { TOOLS } from '../../constants/toolsCatalog';
-import { SITE_NAME, SITE_URL } from '../../constants/site';
+import { SITE_LOGO_URL, SITE_NAME, SITE_URL, absoluteUrl } from '../../constants/site';
 import { getToolSeo } from '../../constants/seoContent';
 import SeoHead from './SeoHead';
 
@@ -20,21 +20,24 @@ function buildToolJsonLd(seo) {
       {
         '@type': 'WebApplication',
         name: `${seo.h1} — ${SITE_NAME}`,
-        url: `${SITE_URL}${seo.path}`,
+        url: absoluteUrl(seo.path),
         applicationCategory: 'UtilitiesApplication',
         operatingSystem: 'Any (modern browser)',
-        browserRequirements: 'Requires JavaScript',
+        browserRequirements: 'Requires JavaScript. Runs entirely client-side.',
         offers: {
           '@type': 'Offer',
           price: '0',
-          priceCurrency: 'USD',
+          priceCurrency: 'INR',
         },
         description: seo.description,
+        image: `${SITE_URL}/img/og-cover.png`,
         provider: {
           '@type': 'Organization',
           name: SITE_NAME,
           url: SITE_URL,
+          logo: SITE_LOGO_URL,
         },
+        isAccessibleForFree: true,
       },
       {
         '@type': 'BreadcrumbList',
@@ -43,19 +46,19 @@ function buildToolJsonLd(seo) {
             '@type': 'ListItem',
             position: 1,
             name: 'Home',
-            item: SITE_URL,
+            item: absoluteUrl('/'),
           },
           {
             '@type': 'ListItem',
             position: 2,
             name: 'Tools',
-            item: `${SITE_URL}/tools`,
+            item: absoluteUrl('/tools'),
           },
           {
             '@type': 'ListItem',
             position: 3,
             name: seo.h1,
-            item: `${SITE_URL}${seo.path}`,
+            item: absoluteUrl(seo.path),
           },
         ],
       },
@@ -127,9 +130,9 @@ export default function ToolSeoSection({ toolId, accentClass = 'text-teal-700' }
         <section className="rounded-2xl border border-teal-100 bg-teal-50/50 px-5 py-6 sm:px-8">
           <h3 className="mb-2 text-lg font-bold text-slate-900">Privacy promise</h3>
           <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
-            {SITE_NAME} processes this file type entirely in your browser. Documents are not
-            uploaded to our servers for merge, split, compress, crop, convert, or security tools.
-            Closing the tab clears in-memory data. Read our{' '}
+            {SITE_NAME} processes shipping-label PDFs entirely in your browser. Documents are not
+            uploaded to our servers when you crop, sort, inject SKUs, or add a logo. Closing the tab
+            clears in-memory data. Read our{' '}
             <Link to="/privacy" className={`font-semibold ${accentClass} hover:underline`}>
               Privacy Policy
             </Link>{' '}

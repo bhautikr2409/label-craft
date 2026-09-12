@@ -1,0 +1,5 @@
+# EcomCrop ads.txt — https://ecomcrop.in/ads.txt
+# After Google AdSense approves your site, replace the line below with the
+# exact ads.txt snippet from AdSense → Sites → ads.txt (includes your pub- ID).
+# Example format (do not use this fake ID in production):
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

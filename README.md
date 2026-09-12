@@ -1,6 +1,6 @@
-# LabelCraft
+# EcomCrop
 
-Separate React app for **e-commerce / marketplace shipping-label tools**, copied from PDFCraft (`cropPDF`) with the same processing logic and UI.
+Separate React app for **e-commerce / marketplace shipping-label tools** (domain: [ecomcrop.in](https://ecomcrop.in)). Originally forked from PDFCraft (`cropPDF`) with the same processing stack.
 
 PDFCraft is unchanged. Seller tools were **not** removed from that project.
 
@@ -27,4 +27,4 @@ Dev server: **http://localhost:5174** (PDFCraft can keep 5173).
 
 ## Stack
 
-Vite + React 18 + Tailwind + React Router — same pattern as PDFCraft.
+Vite + React 18 + Tailwind + React Router.

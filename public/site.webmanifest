@@ -1,23 +1,34 @@
 {
-  "name": "LabelCraft",
-  "short_name": "LabelCraft",
+  "name": "EcomCrop",
+  "short_name": "EcomCrop",
   "description": "Free private shipping-label tools for marketplace sellers. No uploads.",
   "start_url": "/",
   "scope": "/",
+  "id": "/",
   "display": "standalone",
   "background_color": "#f3f7f6",
   "theme_color": "#0f766e",
   "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
       "src": "/favicon.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
-      "src": "/img/pdfcraft-icon.png",
+      "src": "/img/ecomcrop-icon.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

@@ -23,7 +23,7 @@ export default function Header() {
             </svg>
           </span>
           <span className="text-lg font-extrabold tracking-tight text-slate-900">
-            Label<span className="text-teal-700">Craft</span>
+            Ecom<span className="text-teal-700">Crop</span>
           </span>
         </Link>
 
@@ -35,15 +35,18 @@ export default function Header() {
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
-          <Link
-            to="/guide"
-            className="hidden h-9 items-center rounded-lg px-2 text-sm font-semibold text-slate-600 transition hover:text-teal-800 sm:inline-flex"
-          >
-            Help
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+          <Link to="/guide" className={`hidden md:inline-flex ${navLinkClass}`}>
+            Guides
+          </Link>
+          <Link to="/about" className={`hidden sm:inline-flex ${navLinkClass}`}>
+            About
+          </Link>
+          <Link to="/contact" className={`hidden sm:inline-flex ${navLinkClass}`}>
+            Contact
           </Link>
           <Link
-            to="/"
+            to="/tools"
             className="inline-flex h-9 items-center rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white transition hover:bg-teal-600"
           >
             All tools
