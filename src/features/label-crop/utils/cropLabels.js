@@ -1,4 +1,4 @@
-import { PDFDocument, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import toast from "react-hot-toast";
 import {
   OUTPUT_SIZES,
@@ -12,6 +12,114 @@ import {
 
 function baseName(fileName) {
   return fileName.replace(/\.pdf$/i, "") || "labels";
+}
+
+/**
+ * Sum Flipkart label table QTY column (SKU ID | Description | QTY).
+ * Falls back to 1 when the table cannot be read.
+ */
+async function extractFlipkartTotalQty(pdfPage) {
+  try {
+    const viewport = pdfPage.getViewport({ scale: 1 });
+    const pageW = viewport.width;
+    const pageH = viewport.height;
+    const content = await pdfPage.getTextContent({
+      disableCombineTextItems: false,
+    });
+    const items = [];
+    for (const item of content.items || []) {
+      const str = String(item.str || "").trim();
+      if (!str) continue;
+      items.push({
+        str,
+        x: item.transform?.[4] ?? 0,
+        y: item.transform?.[5] ?? 0,
+      });
+    }
+    if (!items.length) return 1;
+
+    const qtyHeader =
+      items.find((i) => /^qty\.?$/i.test(i.str)) ||
+      items.find((i) => /\bqty\.?\b/i.test(i.str) && i.x > pageW * 0.55);
+    let candidates = [];
+
+    if (qtyHeader) {
+      const hx = qtyHeader.x;
+      const hy = qtyHeader.y;
+      candidates = items.filter(
+        (i) =>
+          /^\d{1,3}$/.test(i.str) &&
+          i.y < hy - 2 &&
+          i.y > hy - pageH * 0.4 &&
+          Math.abs(i.x - hx) < Math.max(48, pageW * 0.14),
+      );
+    }
+
+    // Right-side qty cells in the product table band
+    if (!candidates.length) {
+      candidates = items.filter(
+        (i) =>
+          /^\d{1,3}$/.test(i.str) &&
+          i.x > pageW * 0.7 &&
+          i.y > pageH * 0.22 &&
+          i.y < pageH * 0.58,
+      );
+    }
+
+    if (!candidates.length) return 1;
+
+    candidates.sort((a, b) => b.y - a.y);
+    const usedY = [];
+    let sum = 0;
+    for (const c of candidates) {
+      if (usedY.some((y) => Math.abs(y - c.y) < 4)) continue;
+      const n = Number.parseInt(c.str, 10);
+      if (n >= 1 && n <= 999) {
+        sum += n;
+        usedY.push(c.y);
+      }
+    }
+    return sum > 0 ? sum : 1;
+  } catch (error) {
+    console.warn("Flipkart QTY extract failed", error);
+    return 1;
+  }
+}
+
+/**
+ * Bottom-center black bar with white "QTY. N" (matches Flipkart packing stamp style).
+ */
+function stampQtyBottomCenter(page, qty, font) {
+  const n = Number(qty);
+  if (!page || !font || !Number.isFinite(n) || n < 1) return;
+
+  const text = `QTY. ${n}`;
+  const { width } = page.getSize();
+  const fontSize = Math.max(11, Math.min(14, Math.round(width * 0.035)));
+  const textWidth = font.widthOfTextAtSize(text, fontSize);
+  const barW = Math.max(textWidth + 28, width * 0.42);
+  const barH = fontSize + 10;
+  const barX = (width - barW) / 2;
+  const barY = 10;
+  const textX = barX + (barW - textWidth) / 2;
+  const textY = barY + (barH - fontSize) / 2;
+
+  page.drawRectangle({
+    x: barX,
+    y: barY,
+    width: barW,
+    height: barH,
+    color: rgb(0, 0, 0),
+    opacity: 1,
+  });
+
+  page.drawText(text, {
+    x: textX,
+    y: textY,
+    size: fontSize,
+    font,
+    color: rgb(1, 1, 1),
+  });
 }
 
 const DETECT_RENDER_SCALE = 2.25;
@@ -780,6 +888,7 @@ export async function cropMeeshoPageIntoDoc(
 
 /**
  * Flipkart / auto: detect top shipping label → vector crop into sticker size.
+ * Also stamps total table QTY at bottom center (white on black).
  */
 async function cropFlipkartPage(
   outDoc,
@@ -791,6 +900,7 @@ async function cropFlipkartPage(
   canvas,
   platformId,
   output,
+  qtyFont = null,
 ) {
   const ratios = await resolveTightTopLabelRatios(
     pdfPage,
@@ -807,6 +917,8 @@ async function cropFlipkartPage(
     h: Math.max(0.28, Math.min(0.58, ratios.h)),
   };
 
+  const totalQty = await extractFlipkartTotalQty(pdfPage);
+
   await embedTopLabelRegion(
     outDoc,
     srcLibPage,
@@ -818,9 +930,15 @@ async function cropFlipkartPage(
     {
       shrinkwrap: true,
       // White margin on the 4x6 sticker so Flipkart borders/barcodes are not edge-tight
-      padFrac: { left: 0.045, right: 0.045, top: 0.04, bottom: 0.04 },
+      padFrac: { left: 0.045, right: 0.045, top: 0.04, bottom: 0.055 },
     },
   );
+
+  if (qtyFont) {
+    const pages = outDoc.getPages();
+    const last = pages[pages.length - 1];
+    stampQtyBottomCenter(last, totalQty, qtyFont);
+  }
 }
 
 /**
@@ -877,6 +995,9 @@ export async function cropLabelsAndDownload(file, options = {}) {
       : DETECT_RENDER_SCALE;
 
     const outDoc = await PDFDocument.create();
+    const qtyFont = isMeesho
+      ? null
+      : await outDoc.embedFont(StandardFonts.HelveticaBold);
 
     for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
       assertNotCancelled();
@@ -913,6 +1034,7 @@ export async function cropLabelsAndDownload(file, options = {}) {
             canvas,
             resolvedPlatform,
             output,
+            qtyFont,
           );
         }
       } finally {
