@@ -18,15 +18,9 @@ body {
   background: var(--page-bg);
 }
 
-/* Full-screen document preview: hide site chrome so it cannot overlap controls */
-body.document-preview-open [data-site-header],
-body.document-preview-open [data-site-footer],
+/* Preview modal: keep page visible under the dimmed backdrop; only hide cookie toast */
 body.document-preview-open [data-cookie-consent] {
   display: none !important;
-}
-
-body.document-preview-open main {
-  visibility: hidden !important;
 }
 
 html {
