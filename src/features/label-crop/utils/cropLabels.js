@@ -817,7 +817,8 @@ async function cropFlipkartPage(
     output,
     {
       shrinkwrap: true,
-      padFrac: { left: 0.02, right: 0.02, top: 0.01, bottom: 0.01 },
+      // White margin on the 4x6 sticker so Flipkart borders/barcodes are not edge-tight
+      padFrac: { left: 0.045, right: 0.045, top: 0.04, bottom: 0.04 },
     },
   );
 }
