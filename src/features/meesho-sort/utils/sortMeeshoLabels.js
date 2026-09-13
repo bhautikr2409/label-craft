@@ -9,8 +9,12 @@ function triggerDownload(blob, filename) {
   const link = document.createElement('a');
   link.href = url;
   link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  link.remove();
+  // Delay revoke — instant revoke can cancel the download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 function compareLabelPages(a, b) {
@@ -59,19 +63,11 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
     onProgress?.({ phase: 'reading', current: 0, total: 0 });
 
     const jsDocs = new Map();
-    const libDocs = new Map();
     const loaded = [];
 
     for (const item of items) {
-      const bytes = new Uint8Array(await item.file.arrayBuffer());
-      const pdf = await loadPdfDocument(
-        new File([bytes], item.file.name, {
-          type: item.file.type || 'application/pdf',
-        }),
-      );
-      const libDoc = await PDFDocument.load(bytes.slice());
+      const pdf = await loadPdfDocument(item.file);
       jsDocs.set(item.id, pdf);
-      libDocs.set(item.id, libDoc);
       loaded.push({ item, pdf, pageCount: pdf.numPages });
     }
 
@@ -112,26 +108,33 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
     // 2) Sort: SKU first, then shipping company
     const sorted = [...pages].sort(compareLabelPages);
 
-    // 3) Crop each sorted page with existing Meesho Label Crop path
+    // 3) Crop each sorted page with Meesho Label Crop path (high-DPI raster + rotate)
     const outDoc = await PDFDocument.create();
+    let croppedOk = 0;
     for (let i = 0; i < sorted.length; i++) {
       const entry = sorted[i];
       onProgress?.({ phase: 'cropping', current: i + 1, total: sorted.length });
 
       const pdfjsDoc = jsDocs.get(entry.fileId);
-      const srcLibDoc = libDocs.get(entry.fileId);
-      if (!pdfjsDoc || !srcLibDoc) continue;
+      if (!pdfjsDoc) continue;
 
-      await cropMeeshoPageIntoDoc(
-        outDoc,
-        pdfjsDoc,
-        entry.pageNumber,
-        outputSizeId,
-        srcLibDoc,
-      );
+      try {
+        await cropMeeshoPageIntoDoc(
+          outDoc,
+          pdfjsDoc,
+          entry.pageNumber,
+          outputSizeId,
+        );
+        croppedOk += 1;
+      } catch (error) {
+        console.warn(
+          `Meesho crop failed for page ${entry.pageNumber} (${entry.sku})`,
+          error,
+        );
+      }
     }
 
-    if (outDoc.getPageCount() < 1) {
+    if (outDoc.getPageCount() < 1 || croppedOk < 1) {
       toast.error('Could not crop any label pages.');
       return false;
     }
@@ -144,11 +147,15 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
     triggerDownload(blob, `meesho-labels-sorted-cropped-${stamp}.pdf`);
 
     const summary = buildSortSummary(sorted);
+    const failNote =
+      croppedOk < sorted.length
+        ? ` · ${sorted.length - croppedOk} page${sorted.length - croppedOk === 1 ? '' : 's'} skipped`
+        : '';
     toast.success(
-      `Sorted & cropped ${sorted.length} label${sorted.length === 1 ? '' : 's'} · ${summary.length} SKU${summary.length === 1 ? '' : 's'}`
+      `Sorted & cropped ${croppedOk} label${croppedOk === 1 ? '' : 's'} · ${summary.length} SKU${summary.length === 1 ? '' : 's'}${failNote}`
     );
 
-    return { ok: true, sorted, summary, totalPages: sorted.length };
+    return { ok: true, sorted, summary, totalPages: croppedOk };
   } catch (error) {
     console.error('Meesho sort+crop error:', error);
     const msg = String(error?.message || '');

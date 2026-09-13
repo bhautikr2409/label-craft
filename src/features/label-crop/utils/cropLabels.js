@@ -1,4 +1,4 @@
-import { PDFDocument, degrees, rgb } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
 import toast from "react-hot-toast";
 import {
   OUTPUT_SIZES,
@@ -15,8 +15,12 @@ function triggerDownload(blob, filename) {
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
   link.click();
-  URL.revokeObjectURL(url);
+  link.remove();
+  // Delay revoke — instant revoke can cancel the download in some browsers.
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
 function baseName(fileName) {
@@ -25,6 +29,23 @@ function baseName(fileName) {
 
 const DETECT_RENDER_SCALE = 2.25;
 const TARGET_OUTPUT_DPI = 400;
+const MAX_RENDER_SCALE = 5;
+
+/** pdf.js scale so Meesho sticker embeds stay ~TARGET_OUTPUT_DPI after crop+rotate. */
+function getLabelRenderScale(output) {
+  const minCropW = 595 * 0.5;
+  const minCropH = 842 * 0.42;
+  const needW =
+    output?.widthPt != null
+      ? (output.widthPt / 72) * TARGET_OUTPUT_DPI
+      : 4 * TARGET_OUTPUT_DPI;
+  const needH =
+    output?.heightPt != null
+      ? (output.heightPt / 72) * TARGET_OUTPUT_DPI
+      : 6 * TARGET_OUTPUT_DPI;
+  const scale = Math.max(needW / minCropW, needH / minCropH);
+  return Math.min(MAX_RENDER_SCALE, Math.max(3.5, scale));
+}
 
 /**
  * Resample the cropped label onto an exact print-pixel canvas so the
@@ -490,144 +511,8 @@ function padCanvas(sourceCanvas, pad = {}) {
   return out;
 }
 
-/**
- * Vector crop: embed the PDF page region (keeps text/barcodes sharp at any zoom).
- * Falls back to a high-DPI raster only if embedPage fails.
- */
-async function embedTopLabelRegion(
-  outDoc,
-  srcLibPage,
-  sourceCanvas,
-  width,
-  height,
-  ratios,
-  output,
-  options = {},
-) {
-  const { shrinkwrap = true, rotate90 = false, padFrac = null } = options;
-
-  let finalRatios = ratios;
-  if (shrinkwrap && sourceCanvas) {
-    finalRatios = refineRatiosWithShrinkwrap(
-      ratios,
-      width,
-      height,
-      sourceCanvas,
-    );
-  }
-
-  try {
-    await embedTopLabelVector(
-      outDoc,
-      srcLibPage,
-      finalRatios,
-      output,
-      { rotate90, padFrac },
-    );
-  } catch (error) {
-    console.warn("Vector label embed failed, using high-DPI raster", error);
-    await embedTopLabelRasterFallback(
-      outDoc,
-      sourceCanvas,
-      width,
-      height,
-      finalRatios,
-      output,
-      { rotate90, padFrac },
-    );
-  }
-}
-
-async function embedTopLabelVector(
-  outDoc,
-  srcLibPage,
-  ratios,
-  output,
-  options = {},
-) {
-  const { rotate90 = false, padFrac = null } = options;
-  const { width: pageW, height: pageH } = srcLibPage.getSize();
-  const box = ratiosToPdfBox(ratios, pageW, pageH);
-  const left = Math.max(0, box.pdfX);
-  const bottom = Math.max(0, box.pdfY);
-  const right = Math.min(pageW, box.pdfX + box.pdfW);
-  const top = Math.min(pageH, box.pdfY + box.pdfH);
-
-  if (right - left < 2 || top - bottom < 2) {
-    throw new Error("Invalid crop box");
-  }
-
-  const embedded = await outDoc.embedPage(srcLibPage, {
-    left,
-    bottom,
-    right,
-    top,
-  });
-
-  const embW = embedded.width;
-  const embH = embedded.height;
-
-  if (output.id === "original") {
-    if (rotate90) {
-      const page = outDoc.addPage([embH, embW]);
-      page.drawPage(embedded, {
-        x: 0,
-        y: embW,
-        width: embW,
-        height: embH,
-        rotate: degrees(-90),
-      });
-    } else {
-      const page = outDoc.addPage([embW, embH]);
-      page.drawPage(embedded, {
-        x: 0,
-        y: 0,
-        width: embW,
-        height: embH,
-      });
-    }
-    return;
-  }
-
-  const targetW = output.widthPt;
-  const targetH = output.heightPt;
-  const page = outDoc.addPage([targetW, targetH]);
-  page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: targetW,
-    height: targetH,
-    color: rgb(1, 1, 1),
-  });
-
-  const padL = (padFrac?.left ?? 0) * targetW;
-  const padR = (padFrac?.right ?? 0) * targetW;
-  const padT = (padFrac?.top ?? 0) * targetH;
-  const padB = (padFrac?.bottom ?? 0) * targetH;
-  const availW = Math.max(1, targetW - padL - padR);
-  const availH = Math.max(1, targetH - padT - padB);
-
-  if (rotate90) {
-    // 90° clockwise into availW×availH (non-square safe)
-    page.drawPage(embedded, {
-      x: padL,
-      y: padB + availH,
-      width: availH,
-      height: availW,
-      rotate: degrees(-90),
-    });
-  } else {
-    page.drawPage(embedded, {
-      x: padL,
-      y: padB,
-      width: availW,
-      height: availH,
-    });
-  }
-}
-
-/** High-DPI bitmap fallback when vector embed is unavailable. */
-async function embedTopLabelRasterFallback(
+/** High-DPI bitmap embed (Meesho + raster fallback). Includes shrinkwrap + rotate. */
+async function embedTopLabelRaster(
   outDoc,
   sourceCanvas,
   width,
@@ -636,7 +521,12 @@ async function embedTopLabelRasterFallback(
   output,
   options = {},
 ) {
-  const { rotate90 = false, padFrac = null } = options;
+  const {
+    shrinkwrap = true,
+    rotate90 = false,
+    padPx = null,
+    padFrac = null,
+  } = options;
   const sx = Math.max(0, Math.floor(ratios.x * width));
   const sy = Math.max(0, Math.floor(ratios.y * height));
   const sw = Math.min(width - sx, Math.max(1, Math.floor(ratios.w * width)));
@@ -648,10 +538,25 @@ async function embedTopLabelRasterFallback(
   const ctx = cropCanvas.getContext("2d");
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, sw, sh);
-  ctx.imageSmoothingEnabled = false;
   ctx.drawImage(sourceCanvas, sx, sy, sw, sh, 0, 0, sw, sh);
 
-  if (padFrac) {
+  if (shrinkwrap) {
+    const tight = shrinkwrapCanvas(cropCanvas);
+    if (tight !== cropCanvas) {
+      cropCanvas.width = 0;
+      cropCanvas.height = 0;
+      cropCanvas = tight;
+    }
+  }
+
+  if (padPx) {
+    const padded = padCanvas(cropCanvas, padPx);
+    if (padded !== cropCanvas) {
+      cropCanvas.width = 0;
+      cropCanvas.height = 0;
+      cropCanvas = padded;
+    }
+  } else if (padFrac) {
     const padded = padCanvas(cropCanvas, {
       left: Math.round((padFrac.left ?? 0) * cropCanvas.width),
       right: Math.round((padFrac.right ?? 0) * cropCanvas.width),
@@ -702,11 +607,120 @@ async function embedTopLabelRasterFallback(
 }
 
 /**
- * Meesho path: detect top label → vector crop → rotate 90° for 4×6.
+ * Vector crop for Flipkart (no rotate). Falls back to raster if embedPage fails.
+ */
+async function embedTopLabelRegion(
+  outDoc,
+  srcLibPage,
+  sourceCanvas,
+  width,
+  height,
+  ratios,
+  output,
+  options = {},
+) {
+  const { shrinkwrap = true, padFrac = null } = options;
+
+  let finalRatios = ratios;
+  if (shrinkwrap && sourceCanvas) {
+    finalRatios = refineRatiosWithShrinkwrap(
+      ratios,
+      width,
+      height,
+      sourceCanvas,
+    );
+  }
+
+  try {
+    await embedTopLabelVector(outDoc, srcLibPage, finalRatios, output, {
+      padFrac,
+    });
+  } catch (error) {
+    console.warn("Vector label embed failed, using high-DPI raster", error);
+    await embedTopLabelRaster(
+      outDoc,
+      sourceCanvas,
+      width,
+      height,
+      finalRatios,
+      output,
+      { shrinkwrap: false, padFrac },
+    );
+  }
+}
+
+async function embedTopLabelVector(
+  outDoc,
+  srcLibPage,
+  ratios,
+  output,
+  options = {},
+) {
+  const { padFrac = null } = options;
+  const { width: pageW, height: pageH } = srcLibPage.getSize();
+  const box = ratiosToPdfBox(ratios, pageW, pageH);
+  const left = Math.max(0, box.pdfX);
+  const bottom = Math.max(0, box.pdfY);
+  const right = Math.min(pageW, box.pdfX + box.pdfW);
+  const top = Math.min(pageH, box.pdfY + box.pdfH);
+
+  if (right - left < 2 || top - bottom < 2) {
+    throw new Error("Invalid crop box");
+  }
+
+  const embedded = await outDoc.embedPage(srcLibPage, {
+    left,
+    bottom,
+    right,
+    top,
+  });
+
+  const embW = embedded.width;
+  const embH = embedded.height;
+
+  if (output.id === "original") {
+    const page = outDoc.addPage([embW, embH]);
+    page.drawPage(embedded, {
+      x: 0,
+      y: 0,
+      width: embW,
+      height: embH,
+    });
+    return;
+  }
+
+  const targetW = output.widthPt;
+  const targetH = output.heightPt;
+  const page = outDoc.addPage([targetW, targetH]);
+  page.drawRectangle({
+    x: 0,
+    y: 0,
+    width: targetW,
+    height: targetH,
+    color: rgb(1, 1, 1),
+  });
+
+  const padL = (padFrac?.left ?? 0) * targetW;
+  const padR = (padFrac?.right ?? 0) * targetW;
+  const padT = (padFrac?.top ?? 0) * targetH;
+  const padB = (padFrac?.bottom ?? 0) * targetH;
+  const availW = Math.max(1, targetW - padL - padR);
+  const availH = Math.max(1, targetH - padT - padB);
+
+  page.drawPage(embedded, {
+    x: padL,
+    y: padB,
+    width: availW,
+    height: availH,
+  });
+}
+
+/**
+ * Meesho: detect → high-DPI raster crop → rotate 90° for thermal (reliable path).
+ * Vector+rotate was producing broken downloads in Sort Meesho Labels.
  */
 async function cropMeeshoPage(
   outDoc,
-  srcLibPage,
   pdfPage,
   imageData,
   width,
@@ -732,9 +746,8 @@ async function cropMeeshoPage(
     safeRatios.w = 1 - safeRatios.x;
   }
 
-  await embedTopLabelRegion(
+  await embedTopLabelRaster(
     outDoc,
-    srcLibPage,
     canvas,
     width,
     height,
@@ -752,24 +765,19 @@ export async function cropMeeshoPageIntoDoc(
   pdfjsDoc,
   pageNumber,
   outputSizeId = "4x6",
-  srcLibDoc,
 ) {
-  if (!srcLibDoc) {
-    throw new Error("cropMeeshoPageIntoDoc requires srcLibDoc for vector crop");
-  }
   const output = OUTPUT_SIZES[outputSizeId] || OUTPUT_SIZES["4x6"];
-  const srcLibPage = srcLibDoc.getPages()[pageNumber - 1];
+  const renderScale = getLabelRenderScale(output);
   const pdfPage = await pdfjsDoc.getPage(pageNumber);
   const { imageData, width, height, canvas } = await renderPageImageData(
     pdfjsDoc,
     pageNumber,
-    DETECT_RENDER_SCALE,
+    renderScale,
     true,
   );
   try {
     await cropMeeshoPage(
       outDoc,
-      srcLibPage,
       pdfPage,
       imageData,
       width,
@@ -829,8 +837,8 @@ async function cropFlipkartPage(
 
 /**
  * Crop shipping labels from each page and download.
- * - Flipkart: top shipping-label crop (vector embed)
- * - Meesho: shipping label + Product Details, rotated for thermal
+ * - Flipkart: vector page embed (sharp text)
+ * - Meesho: high-DPI raster + 90° rotate for thermal
  */
 export async function cropLabelsAndDownload(file, options = {}) {
   const { platformId = "auto", outputSizeId = "4x6", onProgress } = options;
@@ -843,7 +851,6 @@ export async function cropLabelsAndDownload(file, options = {}) {
         type: file.type || "application/pdf",
       }),
     );
-    const srcLibDoc = await PDFDocument.load(bytes.slice());
     const pageCount = pdfjsDoc.numPages;
     if (pageCount < 1) {
       toast.error("This PDF has no pages.");
@@ -856,7 +863,15 @@ export async function cropLabelsAndDownload(file, options = {}) {
       if (resolvedPlatform === "auto") resolvedPlatform = "flipkart";
     }
     const isMeesho = resolvedPlatform === "meesho";
-    const srcPages = srcLibDoc.getPages();
+
+    // Flipkart uses vector embed; Meesho uses high-DPI raster (+ rotate).
+    const srcLibDoc = isMeesho
+      ? null
+      : await PDFDocument.load(bytes.slice());
+    const srcPages = srcLibDoc ? srcLibDoc.getPages() : null;
+    const renderScale = isMeesho
+      ? getLabelRenderScale(output)
+      : DETECT_RENDER_SCALE;
 
     const outDoc = await PDFDocument.create();
 
@@ -867,37 +882,43 @@ export async function cropLabelsAndDownload(file, options = {}) {
       const { imageData, width, height, canvas } = await renderPageImageData(
         pdfjsDoc,
         pageNumber,
-        DETECT_RENDER_SCALE,
+        renderScale,
         true,
       );
 
-      const srcLibPage = srcPages[pageNumber - 1];
-      if (isMeesho) {
-        await cropMeeshoPage(
-          outDoc,
-          srcLibPage,
-          pdfPage,
-          imageData,
-          width,
-          height,
-          canvas,
-          output,
-        );
-      } else {
-        await cropFlipkartPage(
-          outDoc,
-          srcLibPage,
-          pdfPage,
-          imageData,
-          width,
-          height,
-          canvas,
-          resolvedPlatform,
-          output,
-        );
+      try {
+        if (isMeesho) {
+          await cropMeeshoPage(
+            outDoc,
+            pdfPage,
+            imageData,
+            width,
+            height,
+            canvas,
+            output,
+          );
+        } else {
+          await cropFlipkartPage(
+            outDoc,
+            srcPages[pageNumber - 1],
+            pdfPage,
+            imageData,
+            width,
+            height,
+            canvas,
+            resolvedPlatform,
+            output,
+          );
+        }
+      } finally {
+        canvas.width = 0;
+        canvas.height = 0;
       }
-      canvas.width = 0;
-      canvas.height = 0;
+    }
+
+    if (outDoc.getPageCount() < 1) {
+      toast.error("Could not crop any labels from this PDF.");
+      return false;
     }
 
     const outBytes = await outDoc.save();
