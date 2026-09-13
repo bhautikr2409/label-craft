@@ -7,6 +7,8 @@ import { extractSKUFromDescription, extractTextFromInvoicePage, extractQtyFromIn
 
 /**
  * Presets for positioning the SKU box in clean white areas of Amazon shipping labels.
+ * All placements draw white text on a black background.
+ * `align: 'center'`: center the box on the returned x (page midline).
  */
 export const SKU_POSITIONS = {
   aboveStationBox: {
@@ -27,6 +29,17 @@ export const SKU_POSITIONS = {
       y: Math.round(height - 45),
     }),
   },
+  bottomCenter: {
+    id: 'bottomCenter',
+    label: 'Bottom Center',
+    hint: 'SKU bar in the footer gap (between Sold on and ATSPL)',
+    align: 'center',
+    getCoords: (width) => ({
+      x: width / 2,
+      // Just above "Sold on" / ATSPL footer line
+      y: 22,
+    }),
+  },
   custom: {
     id: 'custom',
     label: 'Custom Position',
@@ -45,7 +58,7 @@ export const SKU_POSITIONS = {
  * @param {string} skuText - Text string to draw (e.g., "floral perfume = 1 Qty")
  * @param {import('pdf-lib').PDFFont} font - Loaded PDF font
  * @param {Object} [options]
- * @param {string} [options.positionId] - Preset ID ('aboveStationBox', 'centerWhite', 'rightAboveCarrier', 'topRight', 'custom')
+ * @param {string} [options.positionId] - Preset ID
  * @param {number} [options.customX] - Custom X coordinate in points
  * @param {number} [options.customY] - Custom Y coordinate in points
  * @param {number} [options.fontSize] - Font size in points
@@ -65,36 +78,38 @@ export function addSKUToShippingLabel(page, skuText, font, options = {}) {
   if (options.y !== undefined) y = Number(options.y);
 
   const textWidth = font ? font.widthOfTextAtSize(skuText, fontSize) : skuText.length * fontSize * 0.55;
-  const textHeight = fontSize + 4;
+  const padX = 6;
+  const padY = 3;
+  const boxW = textWidth + padX * 2;
+  const boxH = fontSize + padY * 2;
 
-  // Draw solid white backing box to cover background lines and ensure maximum readability
+  if (positionConfig.align === 'center') {
+    x = x - textWidth / 2;
+  }
+
+  // Keep the stamp fully on-page
+  x = Math.max(padX, Math.min(x, width - textWidth - padX));
+  y = Math.max(padY, Math.min(y, height - boxH));
+
+  const boxX = x - padX;
+  const boxY = y - padY;
+
+  // All placements: white text on solid black bar
   page.drawRectangle({
-    x: x - 4,
-    y: y - 2,
-    width: textWidth + 8,
-    height: textHeight,
-    color: rgb(1, 1, 1),
-    opacity: 1.0,
+    x: boxX,
+    y: boxY,
+    width: boxW,
+    height: boxH,
+    color: rgb(0, 0, 0),
+    opacity: 1,
   });
 
-  // Draw clean border outline around SKU box
-  page.drawRectangle({
-    x: x - 4,
-    y: y - 2,
-    width: textWidth + 8,
-    height: textHeight,
-    borderColor: rgb(0.15, 0.15, 0.15),
-    borderWidth: 0.9,
-    opacity: 0.9,
-  });
-
-  // Draw SKU text in bold dark color
   page.drawText(skuText, {
     x,
-    y: y + 2,
+    y: y + 1,
     size: fontSize,
     font,
-    color: rgb(0.05, 0.05, 0.05),
+    color: rgb(1, 1, 1),
   });
 }
 

@@ -109,7 +109,7 @@ export default function AmazonSkuWorkspace({
           </label>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {Object.values(SKU_POSITIONS).map((pos) => {
             const isSelected = positionId === pos.id;
             return (
@@ -123,7 +123,7 @@ export default function AmazonSkuWorkspace({
                     : 'border-slate-200 hover:border-amber-300 hover:bg-slate-50/50'
                 }`}
               >
-                <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center justify-between mb-1 gap-2">
                   <span
                     className={`font-semibold text-xs ${
                       isSelected ? 'text-amber-900' : 'text-slate-800'
@@ -131,9 +131,9 @@ export default function AmazonSkuWorkspace({
                   >
                     {pos.label}
                   </span>
-                  {isSelected && (
-                    <span className="w-2 h-2 rounded-full bg-amber-600 inline-block" />
-                  )}
+                  {isSelected ? (
+                    <span className="w-2 h-2 rounded-full bg-amber-600 inline-block shrink-0" />
+                  ) : null}
                 </div>
                 <p className="text-[11px] text-slate-500 leading-tight">{pos.hint}</p>
               </button>
