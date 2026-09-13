@@ -3,8 +3,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  // Expose GA_MEASUREMENT_ID (and VITE_*) to the client bundle.
-  envPrefix: ['VITE_', 'GA_'],
   server: {
     port: 5174,
   },
