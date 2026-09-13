@@ -59,11 +59,19 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
     onProgress?.({ phase: 'reading', current: 0, total: 0 });
 
     const jsDocs = new Map();
+    const libDocs = new Map();
     const loaded = [];
 
     for (const item of items) {
-      const pdf = await loadPdfDocument(item.file);
+      const bytes = new Uint8Array(await item.file.arrayBuffer());
+      const pdf = await loadPdfDocument(
+        new File([bytes], item.file.name, {
+          type: item.file.type || 'application/pdf',
+        }),
+      );
+      const libDoc = await PDFDocument.load(bytes.slice());
       jsDocs.set(item.id, pdf);
+      libDocs.set(item.id, libDoc);
       loaded.push({ item, pdf, pageCount: pdf.numPages });
     }
 
@@ -111,9 +119,16 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
       onProgress?.({ phase: 'cropping', current: i + 1, total: sorted.length });
 
       const pdfjsDoc = jsDocs.get(entry.fileId);
-      if (!pdfjsDoc) continue;
+      const srcLibDoc = libDocs.get(entry.fileId);
+      if (!pdfjsDoc || !srcLibDoc) continue;
 
-      await cropMeeshoPageIntoDoc(outDoc, pdfjsDoc, entry.pageNumber, outputSizeId);
+      await cropMeeshoPageIntoDoc(
+        outDoc,
+        pdfjsDoc,
+        entry.pageNumber,
+        outputSizeId,
+        srcLibDoc,
+      );
     }
 
     if (outDoc.getPageCount() < 1) {
