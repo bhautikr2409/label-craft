@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { OUTPUT_SIZES } from '../utils/detectLabel';
 
@@ -20,11 +21,12 @@ export default function LabelCropWorkspace({
   setOutputSizeId,
   isProcessing,
   progress,
-  onClear,
+  onNewFile,
   onCrop,
   onCancel,
   formatFileSize,
 }) {
+  const fileInputRef = useRef(null);
   const canRun =
     !isLoading &&
     !loadError &&
@@ -36,8 +38,31 @@ export default function LabelCropWorkspace({
   const platformName = PLATFORM_LABEL[platformId] || platformId;
   const detectedLabel = detectedMarketplace?.label;
 
+  const handleChangeType = () => {
+    // Back to Flipkart / Meesho marketplace selection
+    onChangePlatform?.();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNewFileClick = () => {
+    // Keep current marketplace; open OS file picker directly
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="sr-only"
+        tabIndex={-1}
+        aria-hidden="true"
+        onChange={(event) => {
+          onNewFile?.(event);
+        }}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-4 sm:px-5">
         <div className="min-w-0">
           <h2 className="truncate font-semibold text-slate-900" title={file.name}>
@@ -59,7 +84,7 @@ export default function LabelCropWorkspace({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={onChangePlatform}
+            onClick={handleChangeType}
             disabled={isProcessing}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
           >
@@ -67,7 +92,7 @@ export default function LabelCropWorkspace({
           </button>
           <button
             type="button"
-            onClick={onClear}
+            onClick={handleNewFileClick}
             disabled={isProcessing}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
           >
@@ -102,7 +127,7 @@ export default function LabelCropWorkspace({
                   </button>
                   <button
                     type="button"
-                    onClick={onChangePlatform}
+                    onClick={handleChangeType}
                     disabled={isProcessing}
                     className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-40"
                   >

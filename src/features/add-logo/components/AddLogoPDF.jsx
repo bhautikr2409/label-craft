@@ -7,7 +7,7 @@ import AddLogoPdfUpload from './AddLogoPdfUpload';
 import AddLogoWorkspace from './AddLogoWorkspace';
 
 const STEPS = [
-  { n: '1', title: 'Upload PDF', text: 'Add your label or document' },
+  { n: '1', title: 'Upload Labels', text: 'Add your label or document' },
   { n: '2', title: 'Upload logo', text: 'JPG, PNG, or WEBP image' },
   { n: '3', title: 'Preview', text: 'Check, then print or download' },
 ];

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { validatePdfFile } from '../../crop/utils/validatePdfFile';
 import {
@@ -26,25 +27,49 @@ const PLATFORM_LABEL = {
   meesho: 'Meesho',
 };
 
+function parsePlatformParam(value) {
+  if (value === 'flipkart' || value === 'meesho') return value;
+  return null;
+}
+
 /**
  * Label crop flow:
- * 1) User picks Flipkart or Meesho
+ * 1) User picks Flipkart or Meesho (header dropdown or on-page picker)
  * 2) User uploads PDF (marketplace is verified)
  * 3) User crops → Document Preview
  */
 export function useLabelCrop() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const platformFromUrl = parsePlatformParam(searchParams.get('platform'));
+
   const [file, setFile] = useState(null);
   const [pageCount, setPageCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
   /** null until user chooses Flipkart or Meesho */
-  const [platformId, setPlatformId] = useState(null);
+  const [platformId, setPlatformId] = useState(platformFromUrl);
   const [detectedMarketplace, setDetectedMarketplace] = useState(null);
   const [outputSizeId, setOutputSizeId] = useState('4x6');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const abortRef = useRef(null);
   const { preview, isPreviewOpen, openPreview, closePreview } = useDocumentPreview();
+
+  /** Sync marketplace from header dropdown / URL (?platform=flipkart|meesho). */
+  useEffect(() => {
+    if (!platformFromUrl) return;
+    setPlatformId((prev) => {
+      if (prev && prev !== platformFromUrl) {
+        setFile(null);
+        setPageCount(0);
+        setLoadError(null);
+        setDetectedMarketplace(null);
+        setProgress({ current: 0, total: 0 });
+      }
+      return platformFromUrl;
+    });
+  }, [platformFromUrl]);
 
   useEffect(() => {
     if (!file) {
@@ -139,10 +164,14 @@ export function useLabelCrop() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [file]);
 
-  const selectPlatform = useCallback((id) => {
-    if (id !== 'flipkart' && id !== 'meesho') return;
-    setPlatformId(id);
-  }, []);
+  const selectPlatform = useCallback(
+    (id) => {
+      if (id !== 'flipkart' && id !== 'meesho') return;
+      setPlatformId(id);
+      navigate(`/label-crop?platform=${id}`, { replace: true });
+    },
+    [navigate]
+  );
 
   /** Go back to marketplace choice and clear any uploaded file. */
   const changePlatform = useCallback(() => {
@@ -152,7 +181,8 @@ export function useLabelCrop() {
     setDetectedMarketplace(null);
     setProgress({ current: 0, total: 0 });
     setPlatformId(null);
-  }, []);
+    navigate('/label-crop', { replace: true });
+  }, [navigate]);
 
   const acceptFile = useCallback(
     (incoming) => {
@@ -188,8 +218,9 @@ export function useLabelCrop() {
       return;
     }
     setPlatformId(detectedMarketplace.id);
+    navigate(`/label-crop?platform=${detectedMarketplace.id}`, { replace: true });
     toast.success(`Switched to ${detectedMarketplace.label}.`);
-  }, [detectedMarketplace]);
+  }, [detectedMarketplace, navigate]);
 
   const cancelProcessing = useCallback(() => {
     abortRef.current?.abort();

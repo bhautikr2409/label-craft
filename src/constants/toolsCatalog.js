@@ -89,7 +89,7 @@ export const TOOLS = [
   },
   {
     id: "add-logo",
-    title: "Add Logo to PDF",
+    title: "Add Logo to Labels",
     description:
       "Upload a PDF and a logo place it in the bottom white space on every page.",
     to: "/add-logo",
