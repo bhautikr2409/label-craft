@@ -4,6 +4,7 @@ import SeoHead from '../components/seo/SeoHead';
 import { SITE_NAME } from '../constants/site';
 import { STATIC_SEO } from '../constants/seoContent';
 import { GUIDES } from '../constants/guidesContent';
+import { BLOG_POSTS } from '../constants/blogContent';
 import { buildHomeJsonLd } from '../lib/seoJsonLd';
 
 export default function LandingPage() {
@@ -29,7 +30,7 @@ export default function LandingPage() {
             {SITE_NAME} helps Flipkart, Meesho, and Amazon sellers prepare shipping labels for
             thermal printers without uploading order PDFs. Crop A4 marketplace sheets to 4×6, sort
             Meesho pages by SKU, stamp invoice SKUs onto Amazon labels, and place your shop logo in
-            empty packing space — all in the browser on your packing laptop.
+            empty packing space all in the browser on your packing laptop.
           </p>
           <p className="mt-4 text-[15px] leading-relaxed text-slate-600 sm:text-base">
             Customer names and addresses stay on your device. We do not require an account to use
@@ -37,7 +38,11 @@ export default function LandingPage() {
             <Link to="/guide" className="font-semibold text-teal-800 hover:underline">
               Help Guide
             </Link>{' '}
-            or the packing articles below.
+            or the packing articles and{' '}
+            <Link to="/blog" className="font-semibold text-teal-800 hover:underline">
+              blog
+            </Link>{' '}
+            below.
           </p>
         </div>
       </section>
@@ -91,6 +96,37 @@ export default function LandingPage() {
             </Link>
             .
           </p>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200/80 bg-[var(--page-bg)]">
+        <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-16">
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+              From the blog
+            </h2>
+            <Link to="/blog" className="text-sm font-semibold text-teal-800 hover:underline">
+              View all posts
+            </Link>
+          </div>
+          <ul className="space-y-4">
+            {BLOG_POSTS.slice(0, 3).map((post) => (
+              <li key={post.slug}>
+                <Link
+                  to={post.path}
+                  className="block rounded-2xl border border-slate-100 bg-white px-5 py-4 transition hover:border-teal-200"
+                >
+                  <span className="text-xs font-semibold uppercase tracking-wide text-teal-700">
+                    {post.category}
+                  </span>
+                  <span className="mt-1 block text-base font-bold text-slate-900">{post.h1}</span>
+                  <span className="mt-1 block text-sm leading-relaxed text-slate-600">
+                    {post.description}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
     </>

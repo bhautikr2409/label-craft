@@ -99,11 +99,11 @@ export default function ToolsCatalog({
                 Private by design · No uploads
               </p>
               <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-slate-800 sm:text-4xl md:text-[2.6rem] md:leading-[1.15]">
-                {SITE_NAME} — shipping label tools that stay on your device
+                {SITE_NAME} shipping label tools that stay on your device
               </h1>
               <p className="mx-auto max-w-2xl text-base text-slate-500 sm:text-lg">
                 Crop Flipkart & Meesho labels, sort Meesho by SKU, inject Amazon SKUs, and add a shop
-                logo — without sending files to a server.
+                logo without sending files to a server.
               </p>
             </>
           ) : (
@@ -219,7 +219,7 @@ export default function ToolsCatalog({
               },
               {
                 title: 'Fast',
-                text: 'No upload wait — convert and download instantly.',
+                text: 'No upload wait convert and download instantly.',
               },
               {
                 title: 'Free',

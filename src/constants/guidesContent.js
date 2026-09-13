@@ -62,7 +62,7 @@ export const GUIDES = [
     path: '/guides/sort-meesho-labels-by-sku',
     title: `How to Sort Meesho Shipping Labels by SKU for Faster Packing | ${SITE_NAME}`,
     description:
-      'Learn how to combine Meesho label PDFs, sort pages by SKU and courier, crop for thermal print, and pack faster — privately in your browser.',
+      'Learn how to combine Meesho label PDFs, sort pages by SKU and courier, crop for thermal print, and pack faster privately in your browser.',
     keywords:
       'sort meesho labels, meesho sku packing, meesho delhivery sort, arrange meesho labels',
     h1: 'How to sort Meesho shipping labels by SKU',
@@ -108,7 +108,7 @@ export const GUIDES = [
     path: '/guides/amazon-shipping-label-sku',
     title: `How to Put Product SKUs on Amazon Shipping Labels | ${SITE_NAME}`,
     description:
-      'Amazon batch PDFs pair a shipping label with an invoice. Learn how to extract the SKU from the invoice and stamp it on the label for faster packing — in your browser.',
+      'Amazon batch PDFs pair a shipping label with an invoice. Learn how to extract the SKU from the invoice and stamp it on the label for faster packing in your browser.',
     keywords:
       'amazon shipping label sku, amazon invoice sku, inject sku on amazon label, amazon seller packing',
     h1: 'How to put product SKUs on Amazon shipping labels',

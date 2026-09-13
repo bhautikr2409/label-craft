@@ -4,6 +4,7 @@ import { TOOLS } from '../../constants/toolsCatalog';
 const COMPANY_LINKS = [
   { to: '/about', label: 'About Us' },
   { to: '/contact', label: 'Contact' },
+  { to: '/blog', label: 'Blog' },
   { to: '/guide', label: 'Help & Guides' },
   { to: '/privacy', label: 'Privacy Policy' },
   { to: '/terms', label: 'Terms of Service' },

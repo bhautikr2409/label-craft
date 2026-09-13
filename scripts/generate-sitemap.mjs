@@ -1,6 +1,6 @@
 /**
- * Writes public/sitemap.xml from path: '...' entries in seoContent.js + guidesContent.js.
- * Priorities: home > tools/product pages > guides > legal.
+ * Writes public/sitemap.xml from path: '...' entries in seoContent + guides + blog.
+ * Priorities: home > tools/product pages > guides/blog > legal.
  */
 import { readFileSync, writeFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -15,12 +15,14 @@ const SITE_URL = `https://${domainMatch?.[1] || 'ecomcrop.in'}`;
 
 const seoSource = readFileSync(join(root, 'src/constants/seoContent.js'), 'utf8');
 const guidesSource = readFileSync(join(root, 'src/constants/guidesContent.js'), 'utf8');
+const blogSource = readFileSync(join(root, 'src/constants/blogContent.js'), 'utf8');
 
 const paths = [
   ...new Set(
     [
       ...seoSource.matchAll(/path:\s*'(\/[^']*)'/g),
       ...guidesSource.matchAll(/path:\s*'(\/[^']*)'/g),
+      ...blogSource.matchAll(/path:\s*'(\/[^']*)'/g),
     ]
       .map((m) => m[1])
       .filter((p) => p && p !== '/404')
@@ -31,15 +33,23 @@ function priorityFor(path) {
   if (path === '/') return '1.0';
   if (path === '/tools') return '0.9';
   if (['/label-crop', '/meesho-sort', '/amazon-sku', '/add-logo'].includes(path)) return '0.9';
-  if (path.startsWith('/guides/')) return '0.8';
-  if (path === '/guide' || path === '/about' || path === '/contact') return '0.7';
+  if (path.startsWith('/guides/') || path.startsWith('/blog/')) return '0.8';
+  if (path === '/guide' || path === '/blog' || path === '/about' || path === '/contact') return '0.7';
   if (path === '/privacy' || path === '/terms') return '0.3';
   return '0.6';
 }
 
 function changeFreqFor(path) {
   if (path === '/privacy' || path === '/terms') return 'monthly';
-  if (path.startsWith('/guides/') || path === '/guide' || path === '/about') return 'monthly';
+  if (
+    path.startsWith('/guides/') ||
+    path.startsWith('/blog/') ||
+    path === '/guide' ||
+    path === '/blog' ||
+    path === '/about'
+  ) {
+    return 'monthly';
+  }
   return 'weekly';
 }
 

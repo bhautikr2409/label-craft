@@ -20,6 +20,8 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Guide = lazy(() => import('./pages/Guide'));
 const GuideArticle = lazy(() => import('./pages/GuideArticle'));
+const Blog = lazy(() => import('./pages/Blog'));
+const BlogPost = lazy(() => import('./pages/BlogPost'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function PageLoader() {
@@ -58,6 +60,8 @@ function App() {
                 <Route path="/terms" element={<TermsOfService />} />
                 <Route path="/guide" element={<Guide />} />
                 <Route path="/guides/:slug" element={<GuideArticle />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>

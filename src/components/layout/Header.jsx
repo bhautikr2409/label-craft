@@ -39,7 +39,10 @@ export default function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1 sm:gap-2">
-          <Link to="/guide" className={`hidden md:inline-flex ${navLinkClass}`}>
+          <Link to="/blog" className={`hidden md:inline-flex ${navLinkClass}`}>
+            Blog
+          </Link>
+          <Link to="/guide" className={`hidden lg:inline-flex ${navLinkClass}`}>
             Guides
           </Link>
           <Link to="/about" className={`hidden sm:inline-flex ${navLinkClass}`}>
