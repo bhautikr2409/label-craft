@@ -27,6 +27,7 @@ export function useMeeshoSort() {
   const [outputSizeId, setOutputSizeId] = useState('4x6');
   const filesRef = useRef(files);
   filesRef.current = files;
+  const abortRef = useRef(null);
   const { preview, isPreviewOpen, openPreview, closePreview } = useDocumentPreview();
 
   const addFiles = useCallback(async (incoming) => {
@@ -79,6 +80,10 @@ export function useMeeshoSort() {
     setProgress({ phase: null, current: 0, total: 0 });
   }, []);
 
+  const cancelProcessing = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
   const runSort = useCallback(async () => {
     const ready = filesRef.current.filter((item) => item.status === 'ready');
     if (ready.length < 1) {
@@ -86,6 +91,8 @@ export function useMeeshoSort() {
       return;
     }
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     setIsProcessing(true);
     setLastSummary(null);
     setProgress({ phase: 'reading', current: 0, total: 0 });
@@ -95,8 +102,10 @@ export function useMeeshoSort() {
       result = await sortMeeshoLabelsAndDownload(ready, {
         onProgress: setProgress,
         outputSizeId,
+        signal: controller.signal,
       });
     } finally {
+      abortRef.current = null;
       setIsProcessing(false);
       setProgress({ phase: null, current: 0, total: 0 });
     }
@@ -144,6 +153,7 @@ export function useMeeshoSort() {
     removeFile,
     clearFiles,
     runSort,
+    cancelProcessing,
     preview,
     isPreviewOpen,
     closePreview,

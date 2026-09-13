@@ -22,6 +22,7 @@ export default function LabelCropWorkspace({
   progress,
   onClear,
   onCrop,
+  onCancel,
   formatFileSize,
 }) {
   const canRun =
@@ -174,6 +175,16 @@ export default function LabelCropWorkspace({
                     className="h-full rounded-full bg-rose-600 transition-all"
                     style={{ width: `${progressPercent}%` }}
                   />
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="rounded-lg border border-rose-300 bg-white px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                  >
+                    Cancel
+                  </button>
+                  <span className="text-xs text-rose-700/80">Stop after the current page</span>
                 </div>
               </div>
             ) : null}

@@ -13,6 +13,7 @@ export default function MeeshoSortWorkspace({
   onRemove,
   onClear,
   onSort,
+  onCancel,
 }) {
   const readyCount = files.filter((f) => f.status === 'ready').length;
   const canRun = readyCount >= 1 && !isProcessing;
@@ -146,6 +147,16 @@ export default function MeeshoSortWorkspace({
                 className="h-full rounded-full bg-orange-600 transition-all"
                 style={{ width: `${progressPercent}%` }}
               />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onCancel}
+                className="rounded-lg border border-orange-300 bg-white px-3 py-2 text-sm font-semibold text-orange-800 transition hover:bg-orange-50"
+              >
+                Cancel
+              </button>
+              <span className="text-xs text-orange-800/80">Stop after the current step</span>
             </div>
           </div>
         ) : null}

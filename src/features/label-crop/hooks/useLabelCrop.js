@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { validatePdfFile } from '../../crop/utils/validatePdfFile';
 import {
@@ -43,6 +43,7 @@ export function useLabelCrop() {
   const [outputSizeId, setOutputSizeId] = useState('4x6');
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const abortRef = useRef(null);
   const { preview, isPreviewOpen, openPreview, closePreview } = useDocumentPreview();
 
   useEffect(() => {
@@ -190,6 +191,10 @@ export function useLabelCrop() {
     toast.success(`Switched to ${detectedMarketplace.label}.`);
   }, [detectedMarketplace]);
 
+  const cancelProcessing = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
   const runCrop = useCallback(async () => {
     if (!file || pageCount < 1 || isProcessing) return;
     if (platformId !== 'flipkart' && platformId !== 'meesho') {
@@ -210,6 +215,8 @@ export function useLabelCrop() {
       return;
     }
 
+    const controller = new AbortController();
+    abortRef.current = controller;
     setIsProcessing(true);
     setProgress({ current: 0, total: pageCount });
     let result = null;
@@ -218,8 +225,10 @@ export function useLabelCrop() {
         platformId,
         outputSizeId,
         onProgress: setProgress,
+        signal: controller.signal,
       });
     } finally {
+      abortRef.current = null;
       setIsProcessing(false);
       setProgress({ current: 0, total: 0 });
     }
@@ -285,6 +294,7 @@ export function useLabelCrop() {
     acceptFile,
     clearFile,
     runCrop,
+    cancelProcessing,
     formatFileSize,
     preview,
     isPreviewOpen,

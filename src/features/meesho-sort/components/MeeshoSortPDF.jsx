@@ -24,6 +24,7 @@ export default function MeeshoSortPDF() {
     removeFile,
     clearFiles,
     runSort,
+    cancelProcessing,
     preview,
     isPreviewOpen,
     closePreview,
@@ -86,6 +87,7 @@ export default function MeeshoSortPDF() {
               onRemove={removeFile}
               onClear={clearFiles}
               onSort={runSort}
+              onCancel={cancelProcessing}
             />
           )}
 

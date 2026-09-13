@@ -38,6 +38,7 @@ export default function LabelCropPDF() {
     acceptFile,
     clearFile,
     runCrop,
+    cancelProcessing,
     formatFileSize,
     preview,
     isPreviewOpen,
@@ -130,6 +131,7 @@ export default function LabelCropPDF() {
               progress={progress}
               onClear={clearFile}
               onCrop={runCrop}
+              onCancel={cancelProcessing}
               formatFileSize={formatFileSize}
             />
           )}

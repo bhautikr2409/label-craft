@@ -39,7 +39,15 @@ export function buildSortSummary(sortedPages) {
  * (does not auto-download).
  */
 export async function sortMeeshoLabelsAndDownload(items, options = {}) {
-  const { onProgress, outputSizeId = '4x6' } = options;
+  const { onProgress, outputSizeId = '4x6', signal } = options;
+
+  const assertNotCancelled = () => {
+    if (signal?.aborted) {
+      const err = new Error('Cancelled');
+      err.name = 'AbortError';
+      throw err;
+    }
+  };
 
   if (!items?.length) {
     toast.error('Upload at least one Meesho label PDF.');
@@ -47,12 +55,14 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
   }
 
   try {
+    assertNotCancelled();
     onProgress?.({ phase: 'reading', current: 0, total: 0 });
 
     const jsDocs = new Map();
     const loaded = [];
 
     for (const item of items) {
+      assertNotCancelled();
       const pdf = await loadPdfDocument(item.file);
       jsDocs.set(item.id, pdf);
       loaded.push({ item, pdf, pageCount: pdf.numPages });
@@ -70,6 +80,7 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
 
     for (const { item, pdf, pageCount } of loaded) {
       for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+        assertNotCancelled();
         scanned += 1;
         onProgress?.({ phase: 'reading', current: scanned, total: totalPages });
 
@@ -99,6 +110,7 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
     const outDoc = await PDFDocument.create();
     let croppedOk = 0;
     for (let i = 0; i < sorted.length; i++) {
+      assertNotCancelled();
       const entry = sorted[i];
       onProgress?.({ phase: 'cropping', current: i + 1, total: sorted.length });
 
@@ -114,12 +126,15 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
         );
         croppedOk += 1;
       } catch (error) {
+        if (error?.name === 'AbortError') throw error;
         console.warn(
           `Meesho crop failed for page ${entry.pageNumber} (${entry.sku})`,
           error,
         );
       }
     }
+
+    assertNotCancelled();
 
     if (outDoc.getPageCount() < 1 || croppedOk < 1) {
       toast.error('Could not crop any label pages.');
@@ -152,6 +167,10 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
       platformId: 'meesho',
     };
   } catch (error) {
+    if (error?.name === 'AbortError' || signal?.aborted) {
+      toast('Processing cancelled.', { icon: '⏹️' });
+      return { ok: false, cancelled: true };
+    }
     console.error('Meesho sort+crop error:', error);
     const msg = String(error?.message || '');
     if (/password|encrypt/i.test(msg)) {

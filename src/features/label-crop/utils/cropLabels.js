@@ -825,14 +825,29 @@ async function cropFlipkartPage(
 /**
  * Crop shipping labels from each page.
  * Returns { ok, blob, filename, pageCount, platformId } for Document Preview
- * (does not auto-download).
+ * (does not auto-download). Pass options.signal to cancel mid-run.
  */
 export async function cropLabelsAndDownload(file, options = {}) {
-  const { platformId = "auto", outputSizeId = "4x6", onProgress } = options;
+  const {
+    platformId = "auto",
+    outputSizeId = "4x6",
+    onProgress,
+    signal,
+  } = options;
   const output = OUTPUT_SIZES[outputSizeId] || OUTPUT_SIZES["4x6"];
 
+  const assertNotCancelled = () => {
+    if (signal?.aborted) {
+      const err = new Error("Cancelled");
+      err.name = "AbortError";
+      throw err;
+    }
+  };
+
   try {
+    assertNotCancelled();
     const bytes = new Uint8Array(await file.arrayBuffer());
+    assertNotCancelled();
     const pdfjsDoc = await loadPdfDocument(
       new File([bytes], file.name, {
         type: file.type || "application/pdf",
@@ -863,6 +878,7 @@ export async function cropLabelsAndDownload(file, options = {}) {
     const outDoc = await PDFDocument.create();
 
     for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+      assertNotCancelled();
       onProgress?.({ current: pageNumber, total: pageCount });
 
       const pdfPage = await pdfjsDoc.getPage(pageNumber);
@@ -874,6 +890,7 @@ export async function cropLabelsAndDownload(file, options = {}) {
       );
 
       try {
+        assertNotCancelled();
         if (isMeesho) {
           await cropMeeshoPage(
             outDoc,
@@ -903,6 +920,8 @@ export async function cropLabelsAndDownload(file, options = {}) {
       }
     }
 
+    assertNotCancelled();
+
     if (outDoc.getPageCount() < 1) {
       toast.error("Could not crop any labels from this PDF.");
       return false;
@@ -924,6 +943,10 @@ export async function cropLabelsAndDownload(file, options = {}) {
       platformId: resolvedPlatform,
     };
   } catch (error) {
+    if (error?.name === "AbortError" || signal?.aborted) {
+      toast("Cropping cancelled.", { icon: "⏹️" });
+      return { ok: false, cancelled: true };
+    }
     console.error("Label crop error:", error);
     const msg = String(error?.message || "");
     if (/password|encrypted/i.test(msg)) {
