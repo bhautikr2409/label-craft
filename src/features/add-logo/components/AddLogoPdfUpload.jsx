@@ -85,10 +85,10 @@ export default function AddLogoPdfUpload({ onFileChange, onFileDrop, disabled })
 
       <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-violet-600">Step 1</p>
       <h2 className="mb-2 text-xl font-bold text-slate-900">
-        {isDragging ? 'Drop your PDF here' : 'Upload your PDF'}
+        {isDragging ? 'Drop Meesho label PDF here' : 'Upload Meesho label PDF'}
       </h2>
       <p className="mb-6 text-sm text-slate-500">
-        Shipping labels, invoices, or any multi-page PDF · Max {maxMb} MB
+        Meesho shipping labels only · Max {maxMb} MB · Other marketplaces show an error
       </p>
 
       <button

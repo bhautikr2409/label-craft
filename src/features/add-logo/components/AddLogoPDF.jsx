@@ -7,7 +7,7 @@ import AddLogoPdfUpload from './AddLogoPdfUpload';
 import AddLogoWorkspace from './AddLogoWorkspace';
 
 const STEPS = [
-  { n: '1', title: 'Upload Labels', text: 'Add your label or document' },
+  { n: '1', title: 'Upload Meesho label', text: 'Meesho shipping label PDF only' },
   { n: '2', title: 'Upload logo', text: 'JPG, PNG, or WEBP image' },
   { n: '3', title: 'Preview', text: 'Check, then print or download' },
 ];
@@ -17,6 +17,7 @@ export default function AddLogoPDF() {
     pdfFile,
     pageCount,
     isLoading,
+    isDetecting,
     loadError,
     logoFile,
     logoPreviewUrl,
@@ -43,14 +44,14 @@ export default function AddLogoPDF() {
         <div className="mx-auto max-w-3xl">
           <div className="mb-8 text-center sm:mb-10">
             <p className="mb-2 text-sm font-semibold uppercase tracking-wide text-violet-600">
-              Add Logo to PDF
+              Add Logo to Meesho Label
             </p>
             <h1 className="mb-3 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-              Place your logo in the blank space
+              Place your logo on Meesho labels
             </h1>
             <p className="mx-auto max-w-xl text-base text-slate-600 sm:text-lg">
-              Upload a PDF, then your logo. We put it in the bottom white space on every page —
-              ideal for Meesho labels, invoices, and packing slips.
+              Upload a Meesho label PDF, then your logo. We put it in the bottom white space on
+              every page. Other marketplaces are blocked with an error.
             </p>
           </div>
 
@@ -59,8 +60,13 @@ export default function AddLogoPDF() {
               <AddLogoPdfUpload
                 onFileChange={loadPdf}
                 onFileDrop={acceptPdf}
-                disabled={isProcessing}
+                disabled={isProcessing || isDetecting}
               />
+              {isDetecting ? (
+                <p className="mt-4 text-center text-sm font-medium text-violet-700">
+                  Checking for Meesho label…
+                </p>
+              ) : null}
 
               <div className="mt-10 rounded-2xl border border-slate-200 bg-white px-6 py-6 sm:px-8">
                 <h3 className="mb-5 text-center text-sm font-semibold text-slate-900 sm:text-left">
@@ -114,7 +120,7 @@ export default function AddLogoPDF() {
           <ToolSeoSection toolId="add-logo" accentClass="text-violet-600" />
 
           <p className="mt-6 text-center text-sm text-slate-500">
-            Cropping shipping labels?{' '}
+            Cropping Flipkart or Meesho labels?{' '}
             <Link to="/label-crop" className="font-medium text-violet-600 hover:underline">
               Open Label Crop
             </Link>

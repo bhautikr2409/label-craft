@@ -21,7 +21,6 @@ export default function AmazonSkuPDF() {
     setIncludeOrderCount,
     isLoading,
     isProcessing,
-    error,
     handleFileSelect,
     handleClearFile,
     handleProcessAndDownload,
@@ -49,12 +48,6 @@ export default function AmazonSkuPDF() {
               the shipping label&apos;s blank space.
             </p>
           </div>
-
-          {error && (
-            <div className="mx-auto mb-6 max-w-3xl rounded-xl border border-red-200 bg-red-50 p-4 text-center text-sm font-medium text-red-700">
-              ⚠️ {error}
-            </div>
-          )}
 
           {!file ? (
             <AmazonSkuUpload onFileSelect={handleFileSelect} isLoading={isLoading} />

@@ -90,32 +90,36 @@ export const TOOL_SEO = {
 
   "add-logo": {
     path: "/add-logo",
-    title: `Add Logo to PDF — Stamp Brand on Every Page | ${SITE_NAME}`,
+    title: `Add Logo to Meesho Label | ${SITE_NAME}`,
     description:
-      "Add your logo to the bottom white space of a PDF. Works on multi-page shipping labels and invoices. Free, private, browser-based.",
+      "Add your shop logo to Meesho shipping label PDFs in the bottom white space. Meesho labels only — free and private in your browser.",
     keywords:
-      "add logo to pdf, stamp logo on pdf, brand shipping label, meesho logo pdf, put image on pdf bottom",
-    h1: "Add Logo to PDF",
-    eyebrow: "Add Logo Tool",
+      "add logo to meesho label, meesho logo pdf, stamp logo on meesho shipping label, brand meesho label",
+    h1: "Add Logo to Meesho Label",
+    eyebrow: "Meesho Logo Tool",
     intro:
-      "Upload a PDF, then your logo or brand image. EcomCrop finds the blank area under the content and places the logo there on every page — same position throughout.",
+      "Upload a Meesho label PDF, then your logo. EcomCrop places the mark in the bottom white space on every page. Flipkart and Amazon files are rejected with an error.",
     related: ["label-crop", "meesho-sort", "amazon-sku"],
     sections: [
       {
-        heading: "Made for labels with empty space",
+        heading: "Built for Meesho labels",
         paragraphs: [
-          "Marketplace packing slips and tax invoices often leave a large white band at the bottom of the page. Use Add Logo to drop your shop brand into that space without covering addresses, barcodes, or invoice tables.",
+          "Meesho shipping and packing PDFs often leave a large white band at the bottom of the page. Use this tool to drop your shop brand into that space without covering addresses, barcodes, or invoice tables.",
           "Upload a PNG or JPEG with a transparent or solid background. Keep the logo modest in height so thermal print density stays sharp. The same placement is applied on every page for a consistent pack-out.",
         ],
       },
       {
-        heading: "Works with cropped label PDFs",
+        heading: "Works with cropped Meesho PDFs",
         paragraphs: [
-          "Many sellers run Label Crop or Sort Meesho Labels first, then Add Logo on the result. Because every step is client-side, order data never leaves the device between tools.",
+          "Many sellers run Label Crop or Sort Meesho Labels first, then Add Logo on the Meesho result. Because every step is client-side, order data never leaves the device between tools.",
         ],
       },
     ],
     faqs: [
+      {
+        q: "Does this work with Flipkart or Amazon labels?",
+        a: "No. This tool accepts Meesho labels only. Non-Meesho PDFs show an error. Use Label Crop for Flipkart/Meesho cropping, or Amazon SKU Injector for Amazon.",
+      },
       {
         q: "Does the logo appear on every page?",
         a: "Yes. The same logo is placed in the same relative bottom position on all pages of the PDF.",

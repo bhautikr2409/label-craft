@@ -6,6 +6,10 @@ import {
   trackProcessComplete,
 } from '../../../lib/analytics';
 import { useDocumentPreview } from '../../../hooks/useDocumentPreview';
+import {
+  identifyLabelMarketplace,
+  loadPdfDocument,
+} from '../../label-crop/utils/detectLabel';
 import { parseAmazonOrderPairs, processAmazonOrderPDF } from '../utils/processAmazonPdf';
 import { validateAmazonPdfFile } from '../utils/validateAmazonPdf';
 
@@ -31,6 +35,28 @@ export function useAmazonSku() {
     setIsLoading(true);
     setError(null);
 
+    try {
+      // Reject Flipkart / Meesho / unknown before Amazon pair validation
+      const pdf = await loadPdfDocument(selectedFile);
+      const detected = await identifyLabelMarketplace(pdf, selectedFile.name);
+      await pdf.destroy?.();
+
+      if (detected.id !== 'amazon') {
+        const message = 'This tool only accepts Amazon labels.';
+        setError(message);
+        toast.error(message, { duration: 5000, id: 'amazon-sku-only' });
+        setIsLoading(false);
+        return;
+      }
+    } catch (err) {
+      console.error('Amazon label detect failed:', err);
+      const message = 'Could not read this PDF. Please try an Amazon label file.';
+      setError(message);
+      toast.error(message);
+      setIsLoading(false);
+      return;
+    }
+
     const validation = await validateAmazonPdfFile(selectedFile);
 
     if (!validation.valid) {
@@ -47,6 +73,8 @@ export function useAmazonSku() {
     trackFileUpload(TOOL_ID, {
       file_count: 1,
       page_count: validation.pageCount,
+      platform: 'amazon',
+      detected: 'amazon',
     });
 
     try {

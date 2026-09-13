@@ -89,9 +89,9 @@ export const TOOLS = [
   },
   {
     id: "add-logo",
-    title: "Add Logo to Labels",
+    title: "Add Logo to Meesho Label",
     description:
-      "Upload a PDF and a logo place it in the bottom white space on every page.",
+      "Upload a Meesho label PDF and your logo — we place it in the bottom white space on every page.",
     to: "/add-logo",
     category: "brand",
     available: true,

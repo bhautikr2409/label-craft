@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { validatePdfFile } from '../../crop/utils/validatePdfFile';
 import {
+  identifyLabelMarketplace,
+  loadPdfDocument,
+} from '../../label-crop/utils/detectLabel';
+import {
   trackDownload,
   trackFileUpload,
   trackProcessComplete,
@@ -13,12 +17,13 @@ import { validateLogoFile } from '../utils/validateLogo';
 const TOOL_ID = 'add-logo';
 
 /**
- * Flow: upload PDF → upload logo → size → stamp → Document Preview.
+ * Flow: upload Meesho label PDF → upload logo → size → stamp → Document Preview.
  */
 export function useAddLogo() {
   const [pdfFile, setPdfFile] = useState(null);
   const [pageCount, setPageCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDetecting, setIsDetecting] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
@@ -64,16 +69,43 @@ export function useAddLogo() {
     return () => URL.revokeObjectURL(url);
   }, [logoFile]);
 
-  const acceptPdf = useCallback((file) => {
+  const acceptPdf = useCallback(async (file) => {
     if (!validatePdfFile(file)) return;
-    setPdfFile(file);
-    trackFileUpload(TOOL_ID, { file_count: 1, file_kind: 'pdf' });
+
+    setIsDetecting(true);
+    try {
+      const pdf = await loadPdfDocument(file);
+      const detected = await identifyLabelMarketplace(pdf, file.name);
+      await pdf.destroy?.();
+
+      if (detected.id !== 'meesho') {
+        toast.error('This tool only accepts Meesho labels.', {
+          duration: 5000,
+          id: 'add-logo-meesho-only',
+        });
+        return;
+      }
+
+      setPdfFile(file);
+      trackFileUpload(TOOL_ID, {
+        file_count: 1,
+        file_kind: 'pdf',
+        platform: 'meesho',
+        detected: detected.id,
+      });
+      toast.success('Meesho label detected.', { duration: 2200 });
+    } catch (error) {
+      console.error(error);
+      toast.error('Could not read this PDF. Please try another Meesho label file.');
+    } finally {
+      setIsDetecting(false);
+    }
   }, []);
 
   const loadPdf = useCallback(
     (event) => {
       const file = event?.target?.files?.[0];
-      if (file) acceptPdf(file);
+      if (file) void acceptPdf(file);
       if (event?.target) event.target.value = '';
     },
     [acceptPdf]
@@ -114,7 +146,7 @@ export function useAddLogo() {
 
   const runAddLogo = useCallback(async () => {
     if (!pdfFile || pageCount < 1) {
-      toast.error('Upload a PDF first.');
+      toast.error('Upload a Meesho label PDF first.');
       return;
     }
     if (!logoFile) {
@@ -133,11 +165,12 @@ export function useAddLogo() {
       trackProcessComplete(TOOL_ID, {
         page_count: pageCount,
         logo_size: sizeId,
+        platform: 'meesho',
       });
       openPreview({
         blob: result.blob,
         filename: result.filename,
-        platformLabel: 'LOGO',
+        platformLabel: 'MEESHO',
         pageCount: result.pageCount,
       });
     }
@@ -147,6 +180,7 @@ export function useAddLogo() {
     trackDownload(TOOL_ID, {
       page_count: pageCount,
       logo_size: sizeId,
+      platform: 'meesho',
     });
   }, [pageCount, sizeId]);
 
@@ -154,6 +188,7 @@ export function useAddLogo() {
     pdfFile,
     pageCount,
     isLoading,
+    isDetecting,
     loadError,
     logoFile,
     logoPreviewUrl,

@@ -36,9 +36,10 @@ const guideTopics = [
   },
   {
     id: 'add-logo',
-    title: 'Add Logo to PDF',
+    title: 'Add Logo to Meesho Label',
     steps: [
-      'Upload the packing PDF, then a JPG, PNG, or WEBP logo.',
+      'Upload a Meesho label PDF (other marketplaces are rejected).',
+      'Upload a JPG, PNG, or WEBP logo.',
       'Pick small, medium, or large size so the mark fits the bottom white band.',
       'Download and spot-check that addresses and barcodes are not covered.',
     ],
