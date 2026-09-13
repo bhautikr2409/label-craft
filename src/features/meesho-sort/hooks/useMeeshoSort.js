@@ -2,7 +2,14 @@ import { useCallback, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { validateMergeFiles } from '../../merge/utils/validateMergeFiles';
 import { getPdfPageCount } from '../../merge/utils/mergePdfs';
+import {
+  trackDownload,
+  trackFileUpload,
+  trackProcessComplete,
+} from '../../../lib/analytics';
 import { sortMeeshoLabelsAndDownload } from '../utils/sortMeeshoLabels';
+
+const TOOL_ID = 'meesho-sort';
 
 function createId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -33,6 +40,7 @@ export function useMeeshoSort() {
 
     setFiles((prev) => [...prev, ...newItems]);
     setLastSummary(null);
+    trackFileUpload(TOOL_ID, { file_count: accepted.length });
 
     await Promise.all(
       newItems.map(async (item) => {
@@ -87,6 +95,17 @@ export function useMeeshoSort() {
       });
       if (result?.ok) {
         setLastSummary(result.summary);
+        const pages = result.totalPages || 0;
+        trackProcessComplete(TOOL_ID, {
+          page_count: pages,
+          file_count: ready.length,
+          output_size: outputSizeId,
+        });
+        trackDownload(TOOL_ID, {
+          page_count: pages,
+          file_count: ready.length,
+          output_size: outputSizeId,
+        });
       }
     } finally {
       setIsProcessing(false);

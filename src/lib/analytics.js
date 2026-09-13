@@ -95,13 +95,48 @@ export function trackPageView(path, title = document.title) {
 }
 
 /**
- * Optional custom event helper (tool opens, downloads, etc.).
+ * Custom event helper (tool opens, downloads, etc.).
  * @param {string} name
  * @param {Record<string, string | number | boolean>} [params]
  */
 export function trackEvent(name, params = {}) {
   if (!GA_MEASUREMENT_ID || !hasAnalyticsConsent()) return;
-  if (!window.__ecomcropGaReady) return;
-  if (typeof window.gtag !== "function") return;
-  window.gtag("event", name, params);
+  if (!window.__ecomcropGaReady) {
+    initGoogleAnalytics();
+  }
+  if (typeof window.gtag !== 'function') return;
+  window.gtag('event', name, params);
+}
+
+/** @param {string} toolId */
+export function trackToolOpen(toolId) {
+  trackEvent('tool_open', { tool_id: toolId });
+}
+
+/**
+ * @param {string} toolId
+ * @param {{ file_count?: number }} [extra]
+ */
+export function trackFileUpload(toolId, extra = {}) {
+  trackEvent('file_upload', { tool_id: toolId, ...extra });
+}
+
+/**
+ * @param {string} toolId
+ * @param {{ page_count?: number, success?: boolean }} [extra]
+ */
+export function trackProcessComplete(toolId, extra = {}) {
+  trackEvent('process_complete', {
+    tool_id: toolId,
+    success: extra.success !== false,
+    ...extra,
+  });
+}
+
+/**
+ * @param {string} toolId
+ * @param {{ page_count?: number }} [extra]
+ */
+export function trackDownload(toolId, extra = {}) {
+  trackEvent('download', { tool_id: toolId, ...extra });
 }

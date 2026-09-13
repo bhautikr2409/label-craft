@@ -1,7 +1,14 @@
 import { useCallback, useState } from 'react';
 import toast from 'react-hot-toast';
+import {
+  trackDownload,
+  trackFileUpload,
+  trackProcessComplete,
+} from '../../../lib/analytics';
 import { parseAmazonOrderPairs, processAmazonOrderPDF } from '../utils/processAmazonPdf';
 import { validateAmazonPdfFile } from '../utils/validateAmazonPdf';
+
+const TOOL_ID = 'amazon-sku';
 
 export function useAmazonSku() {
   const [file, setFile] = useState(null);
@@ -35,6 +42,10 @@ export function useAmazonSku() {
     setFile(selectedFile);
     setFileUrl(url);
     setPageCount(validation.pageCount);
+    trackFileUpload(TOOL_ID, {
+      file_count: 1,
+      page_count: validation.pageCount,
+    });
 
     try {
       const pairs = await parseAmazonOrderPairs(selectedFile);
@@ -60,25 +71,39 @@ export function useAmazonSku() {
     setIsProcessing(false);
   }, [fileUrl]);
 
-  const handleProcessAndDownload = useCallback(async (options = {}) => {
-    if (!file) {
-      toast.error('Please upload a PDF first.');
-      return;
-    }
+  const handleProcessAndDownload = useCallback(
+    async (options = {}) => {
+      if (!file) {
+        toast.error('Please upload a PDF first.');
+        return;
+      }
 
-    setIsProcessing(true);
-    try {
-      await processAmazonOrderPDF(file, {
-        positionId,
-        customX,
-        customY,
-        includeOrderCount,
-        ...options,
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [file, positionId, customX, customY, includeOrderCount]);
+      setIsProcessing(true);
+      try {
+        const ok = await processAmazonOrderPDF(file, {
+          positionId,
+          customX,
+          customY,
+          includeOrderCount,
+          ...options,
+        });
+        if (ok) {
+          const orders = Math.floor(pageCount / 2);
+          trackProcessComplete(TOOL_ID, {
+            page_count: pageCount,
+            order_count: orders,
+          });
+          trackDownload(TOOL_ID, {
+            page_count: pageCount,
+            order_count: orders,
+          });
+        }
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [file, pageCount, positionId, customX, customY, includeOrderCount]
+  );
 
   return {
     file,

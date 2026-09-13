@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { validatePdfFile } from '../../crop/utils/validatePdfFile';
+import {
+  trackDownload,
+  trackFileUpload,
+  trackProcessComplete,
+} from '../../../lib/analytics';
 import { cropLabelsAndDownload } from '../utils/cropLabels';
 import { formatFileSize, loadPdfDocument } from '../utils/detectLabel';
+
+const TOOL_ID = 'label-crop';
 
 /**
  * Label crop flow:
@@ -81,6 +88,7 @@ export function useLabelCrop() {
       }
       if (!validatePdfFile(incoming)) return;
       setFile(incoming);
+      trackFileUpload(TOOL_ID, { file_count: 1, platform: platformId });
     },
     [platformId]
   );
@@ -111,11 +119,23 @@ export function useLabelCrop() {
     setIsProcessing(true);
     setProgress({ current: 0, total: pageCount });
     try {
-      await cropLabelsAndDownload(file, {
+      const ok = await cropLabelsAndDownload(file, {
         platformId,
         outputSizeId,
         onProgress: setProgress,
       });
+      if (ok) {
+        trackProcessComplete(TOOL_ID, {
+          page_count: pageCount,
+          platform: platformId,
+          output_size: outputSizeId,
+        });
+        trackDownload(TOOL_ID, {
+          page_count: pageCount,
+          platform: platformId,
+          output_size: outputSizeId,
+        });
+      }
     } finally {
       setIsProcessing(false);
       setProgress({ current: 0, total: 0 });

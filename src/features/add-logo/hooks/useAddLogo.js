@@ -1,8 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { validatePdfFile } from '../../crop/utils/validatePdfFile';
+import {
+  trackDownload,
+  trackFileUpload,
+  trackProcessComplete,
+} from '../../../lib/analytics';
 import { addLogoAndDownload, getPdfPageCount } from '../utils/addLogoToPdf';
 import { validateLogoFile } from '../utils/validateLogo';
+
+const TOOL_ID = 'add-logo';
 
 /**
  * Flow: upload PDF → upload logo → size → stamp bottom white space on all pages.
@@ -58,6 +65,7 @@ export function useAddLogo() {
   const acceptPdf = useCallback((file) => {
     if (!validatePdfFile(file)) return;
     setPdfFile(file);
+    trackFileUpload(TOOL_ID, { file_count: 1, file_kind: 'pdf' });
   }, []);
 
   const loadPdf = useCallback(
@@ -72,6 +80,7 @@ export function useAddLogo() {
   const acceptLogo = useCallback((file) => {
     if (!validateLogoFile(file)) return;
     setLogoFile(file);
+    trackFileUpload(TOOL_ID, { file_count: 1, file_kind: 'logo' });
   }, []);
 
   const loadLogo = useCallback(
@@ -112,7 +121,17 @@ export function useAddLogo() {
     }
     setIsProcessing(true);
     try {
-      await addLogoAndDownload(pdfFile, logoFile, { sizeId });
+      const ok = await addLogoAndDownload(pdfFile, logoFile, { sizeId });
+      if (ok) {
+        trackProcessComplete(TOOL_ID, {
+          page_count: pageCount,
+          logo_size: sizeId,
+        });
+        trackDownload(TOOL_ID, {
+          page_count: pageCount,
+          logo_size: sizeId,
+        });
+      }
     } finally {
       setIsProcessing(false);
     }
