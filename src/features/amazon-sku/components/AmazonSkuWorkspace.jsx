@@ -79,7 +79,7 @@ export default function AmazonSkuWorkspace({
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
                   />
                 </svg>
-                Inject SKUs & Download PDF
+                Inject SKUs & Preview PDF
               </>
             )}
           </button>
@@ -104,7 +104,7 @@ export default function AmazonSkuWorkspace({
               className="w-4 h-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500"
             />
             <span className="text-xs font-bold text-amber-900">
-              Include order count (e.g. <code className="font-mono text-amber-700 bg-white px-1.5 py-0.5 rounded border border-amber-200">SKU: floral perfume = 2 order</code>)
+              Include order count (e.g. <code className="font-mono text-amber-700 bg-white px-1.5 py-0.5 rounded border border-amber-200">floral perfume = 2 Qty</code>)
             </span>
           </label>
         </div>
@@ -184,7 +184,7 @@ export default function AmazonSkuWorkspace({
         </div>
         {missingCount > 0 && (
           <span className="text-amber-700 bg-amber-100/80 font-medium px-2.5 py-1 rounded-md">
-            ⚠️ {missingCount} order{missingCount === 1 ? '' : 's'} missing SKU parentheses (will tag as SKU: Not Found)
+            ⚠️ {missingCount} order{missingCount === 1 ? '' : 's'} missing SKU parentheses (will tag as Not Found)
           </span>
         )}
       </div>
@@ -204,9 +204,9 @@ export default function AmazonSkuWorkspace({
           {orderPairs.map((pair) => {
             const formattedTag = pair.sku
               ? includeOrderCount
-                ? `SKU: ${pair.sku} = ${pair.skuCount || 1} order`
-                : `SKU: ${pair.sku}`
-              : 'SKU: Not Found';
+                ? `${pair.sku} = ${pair.skuCount || 1} Qty`
+                : `${pair.sku}`
+              : 'Not Found';
 
             return (
               <div
@@ -244,7 +244,7 @@ export default function AmazonSkuWorkspace({
                     </div>
                   ) : (
                     <div className="px-3.5 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold font-mono">
-                      SKU: Not Found
+                      Not Found
                     </div>
                   )}
                 </div>

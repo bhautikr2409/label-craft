@@ -148,7 +148,7 @@ export const TOOL_SEO = {
         heading: 'Automate Amazon Shipping Label SKU Tagging',
         paragraphs: [
           'Amazon seller batch exports often combine a Shipping Label page and an Invoice page for every order. Packing orders efficiently requires workers to identify the product SKU directly on the shipping label without turning the page.',
-          `${SITE_NAME} automatically parses every 2-page Amazon order pair, extracts the SKU enclosed in parentheses inside the invoice product description, and injects "SKU: <your_sku>" onto the shipping label.`,
+          `${SITE_NAME} automatically parses every 2-page Amazon order pair, extracts the SKU enclosed in parentheses inside the invoice product description, and injects "<your_sku> = <qty> Qty" onto the shipping label.`,
         ],
       },
       {

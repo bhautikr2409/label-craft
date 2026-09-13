@@ -180,7 +180,7 @@ export default function MeeshoSortWorkspace({
           disabled={!canRun}
           className="w-full rounded-xl bg-orange-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-700 disabled:opacity-40 disabled:hover:bg-orange-600 sm:w-auto"
         >
-          {isProcessing ? 'Working…' : 'Sort, Crop & Download'}
+          {isProcessing ? 'Working…' : 'Sort, Crop & Preview'}
         </button>
       </div>
     </div>

@@ -125,7 +125,7 @@ export default function AmazonSkuUpload({ onFileSelect, isLoading }) {
           </div>
           <h4 className="font-semibold text-slate-800 text-sm mb-1">Label Injection</h4>
           <p className="text-xs text-slate-500 leading-relaxed">
-            Injects <code className="text-slate-800 font-semibold">SKU: ...</code> onto the label's blank space while preserving invoice pages.
+            Injects the product text (e.g. <code className="text-slate-800 font-semibold">name = 1 Qty</code>) onto the label&apos;s blank space.
           </p>
         </div>
       </div>

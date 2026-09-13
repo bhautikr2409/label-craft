@@ -704,22 +704,23 @@ export async function detectMeeshoLabelFromText(page) {
 }
 
 /**
- * Detect marketplace from filename + first-page text.
- * Used on upload so Meesho PDFs are not left on the Flipkart default.
- * @returns {'meesho' | 'flipkart' | 'auto'}
+ * Identify marketplace from filename + first-page text.
+ * @returns {{ id: 'meesho'|'flipkart'|'amazon'|'unknown', label: string, confidence: 'high'|'medium'|'low', scores: object }}
  */
-export async function detectMarketplaceFromPdf(pdf, fileName = '') {
+export async function identifyLabelMarketplace(pdf, fileName = '') {
   const name = String(fileName || '').toLowerCase();
-
-  // Meesho supplier exports commonly use Sub_Order_Labels_*.pdf
   let meeshoScore = 0;
   let flipkartScore = 0;
+  let amazonScore = 0;
 
-  if (/sub[_\s-]?order[_\s-]?label/i.test(name) || /meesho/i.test(name)) {
+  if (/sub[_\s-]?order[_\s-]?label/i.test(name) || /\bmeesho\b/i.test(name)) {
     meeshoScore += 4;
   }
-  if (/flipkart|fk[_-]?label|awb/i.test(name)) {
-    flipkartScore += 2;
+  if (/flipkart|fk[_-]?label|e-?kart/i.test(name)) {
+    flipkartScore += 3;
+  }
+  if (/amazon|amzn|amazon[_-]?in/i.test(name)) {
+    amazonScore += 4;
   }
 
   try {
@@ -731,14 +732,14 @@ export async function detectMarketplaceFromPdf(pdf, fileName = '') {
       .toLowerCase();
 
     const bump = (re, amount, target) => {
-      if (re.test(joined)) {
-        if (target === 'meesho') meeshoScore += amount;
-        else flipkartScore += amount;
-      }
+      if (!re.test(joined)) return;
+      if (target === 'meesho') meeshoScore += amount;
+      else if (target === 'amazon') amazonScore += amount;
+      else flipkartScore += amount;
     };
 
-    // Meesho structural signals
-    bump(/\bmeesho\b/, 5, 'meesho');
+    // Meesho
+    bump(/\bmeesho\b/, 6, 'meesho');
     bump(/customer\s*address/, 2, 'meesho');
     bump(/destination\s*code/, 3, 'meesho');
     bump(/return\s*code/, 3, 'meesho');
@@ -746,23 +747,67 @@ export async function detectMarketplaceFromPdf(pdf, fileName = '') {
     bump(/purchase\s*order/, 2, 'meesho');
     bump(/taxable\s*value/, 2, 'meesho');
     bump(/\bdelhivery\b/, 1, 'meesho');
-    bump(/\bgstin\b/, 1, 'meesho');
+    bump(/if\s*undelivered,\s*please\s*return/, 2, 'meesho');
 
-    // Flipkart structural signals
-    bump(/\bflipkart\b/, 5, 'flipkart');
+    // Flipkart / E-Kart
+    bump(/\bflipkart\b/, 6, 'flipkart');
+    bump(/\be-?kart\b/, 4, 'flipkart');
     bump(/ordered\s*through/, 4, 'flipkart');
-    bump(/\bawb\b/, 2, 'flipkart');
     bump(/not\s*for\s*resale/, 3, 'flipkart');
     bump(/shipping\s*\/\s*customer\s*address/, 3, 'flipkart');
-    bump(/fk[_\s-]?order|fsn\b/, 2, 'flipkart');
+    bump(/fk[_\s-]?order|\bfsn\b/, 2, 'flipkart');
+    bump(/\bawb\s*(no|number)?\b/, 2, 'flipkart');
+
+    // Amazon
+    bump(/\bamazon\b/, 6, 'amazon');
+    bump(/\bamzn\b/, 4, 'amazon');
+    bump(/\basin\b/, 4, 'amazon');
+    bump(/sold\s*by/, 2, 'amazon');
+    bump(/ship(?:ping)?\s*from/, 2, 'amazon');
+    bump(/amazon\.in|amazon\s*shipping/, 3, 'amazon');
+    bump(/fulfilichannel|fulfillment\s*by\s*amazon|\bfba\b/, 3, 'amazon');
+    bump(/this\s*shipment\s*contains/, 2, 'amazon');
   } catch (error) {
-    console.warn('Marketplace detect failed', error);
+    console.warn('Marketplace identify failed', error);
   }
 
-  if (meeshoScore >= 3 && meeshoScore > flipkartScore) return 'meesho';
-  if (flipkartScore >= 3 && flipkartScore > meeshoScore) return 'flipkart';
-  if (meeshoScore > flipkartScore) return 'meesho';
-  if (flipkartScore > meeshoScore) return 'flipkart';
+  const scores = { meesho: meeshoScore, flipkart: flipkartScore, amazon: amazonScore };
+  const ranked = [
+    { id: 'meesho', label: 'Meesho', score: meeshoScore },
+    { id: 'flipkart', label: 'Flipkart', score: flipkartScore },
+    { id: 'amazon', label: 'Amazon', score: amazonScore },
+  ].sort((a, b) => b.score - a.score);
+
+  const best = ranked[0];
+  const second = ranked[1];
+
+  if (best.score < 3 || best.score <= second.score) {
+    return { id: 'unknown', label: 'Unknown', confidence: 'low', scores };
+  }
+
+  const confidence =
+    best.score >= 8 && best.score - second.score >= 3
+      ? 'high'
+      : best.score >= 5
+        ? 'medium'
+        : 'low';
+
+  return {
+    id: best.id,
+    label: best.label,
+    confidence,
+    scores,
+  };
+}
+
+/**
+ * Detect marketplace from filename + first-page text.
+ * Used on upload so Meesho PDFs are not left on the Flipkart default.
+ * @returns {'meesho' | 'flipkart' | 'auto'}
+ */
+export async function detectMarketplaceFromPdf(pdf, fileName = '') {
+  const result = await identifyLabelMarketplace(pdf, fileName);
+  if (result.id === 'meesho' || result.id === 'flipkart') return result.id;
   return 'auto';
 }
 

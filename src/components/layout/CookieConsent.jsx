@@ -37,6 +37,7 @@ export default function CookieConsent() {
 
   return (
     <div
+      data-cookie-consent
       role="dialog"
       aria-label="Cookie notice"
       className="fixed inset-x-0 bottom-0 z-[100] border-t border-slate-200 bg-white/95 p-4 backdrop-blur sm:p-5"

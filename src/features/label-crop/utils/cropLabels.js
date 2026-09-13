@@ -10,19 +10,6 @@ import {
   resolveMeeshoLabelRatios,
 } from "./detectLabel";
 
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.rel = "noopener";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  // Delay revoke — instant revoke can cancel the download in some browsers.
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
-
 function baseName(fileName) {
   return fileName.replace(/\.pdf$/i, "") || "labels";
 }
@@ -836,9 +823,9 @@ async function cropFlipkartPage(
 }
 
 /**
- * Crop shipping labels from each page and download.
- * - Flipkart: vector page embed (sharp text)
- * - Meesho: high-DPI raster + 90° rotate for thermal
+ * Crop shipping labels from each page.
+ * Returns { ok, blob, filename, pageCount, platformId } for Document Preview
+ * (does not auto-download).
  */
 export async function cropLabelsAndDownload(file, options = {}) {
   const { platformId = "auto", outputSizeId = "4x6", onProgress } = options;
@@ -925,11 +912,17 @@ export async function cropLabelsAndDownload(file, options = {}) {
     const blob = new Blob([outBytes], { type: "application/pdf" });
     const suffix =
       output.id === "original" ? "cropped-labels" : `labels-${output.id}`;
-    triggerDownload(blob, `${baseName(file.name)}-${suffix}.pdf`);
+    const filename = `${baseName(file.name)}-${suffix}.pdf`;
     toast.success(
       `Cropped ${pageCount} label${pageCount === 1 ? "" : "s"} · ${output.label}`,
     );
-    return true;
+    return {
+      ok: true,
+      blob,
+      filename,
+      pageCount,
+      platformId: resolvedPlatform,
+    };
   } catch (error) {
     console.error("Label crop error:", error);
     const msg = String(error?.message || "");

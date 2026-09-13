@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import '../../../lib/pdf/worker';
+import DocumentPreviewModal from '../../../components/preview/DocumentPreviewModal';
+import ToolSeoSection from '../../../components/seo/ToolSeoSection';
 import { useLabelCrop } from '../hooks/useLabelCrop';
 import LabelCropPlatformPicker from './LabelCropPlatformPicker';
 import LabelCropUpload from './LabelCropUpload';
 import LabelCropWorkspace from './LabelCropWorkspace';
-import ToolSeoSection from '../../../components/seo/ToolSeoSection';
 
 const STEPS = [
   { n: '1', title: 'Choose type', text: 'Select Flipkart or Meesho' },
   { n: '2', title: 'Upload', text: 'Add your A4 label PDF' },
-  { n: '3', title: 'Download', text: 'Get print-ready cropped labels' },
+  { n: '3', title: 'Preview', text: 'Check, then print or download' },
 ];
 
 const PLATFORM_LABEL = {
@@ -26,6 +27,9 @@ export default function LabelCropPDF() {
     platformId,
     setPlatformId,
     changePlatform,
+    detectedMarketplace,
+    marketplaceMismatch,
+    applyDetectedPlatform,
     outputSizeId,
     setOutputSizeId,
     isProcessing,
@@ -35,6 +39,10 @@ export default function LabelCropPDF() {
     clearFile,
     runCrop,
     formatFileSize,
+    preview,
+    isPreviewOpen,
+    closePreview,
+    handlePreviewDownload,
   } = useLabelCrop();
 
   return (
@@ -49,8 +57,8 @@ export default function LabelCropPDF() {
               Flipkart & Meesho label crop
             </h1>
             <p className="mx-auto max-w-xl text-base text-slate-600 sm:text-lg">
-              Choose your marketplace, upload the A4 label PDF, and download a cropped file for
-              thermal printing. Everything runs in your browser.
+              Choose your marketplace, upload the A4 label PDF, and preview cropped labels before
+              you print or download. Everything runs in your browser.
             </p>
           </div>
 
@@ -113,6 +121,9 @@ export default function LabelCropPDF() {
               loadError={loadError}
               platformId={platformId}
               onChangePlatform={changePlatform}
+              detectedMarketplace={detectedMarketplace}
+              marketplaceMismatch={marketplaceMismatch}
+              onApplyDetectedPlatform={applyDetectedPlatform}
               outputSizeId={outputSizeId}
               setOutputSizeId={setOutputSizeId}
               isProcessing={isProcessing}
@@ -133,6 +144,16 @@ export default function LabelCropPDF() {
           </p>
         </div>
       </div>
+
+      <DocumentPreviewModal
+        open={isPreviewOpen}
+        url={preview?.url}
+        blob={preview?.blob}
+        filename={preview?.filename}
+        platformLabel={preview?.platformLabel}
+        onClose={closePreview}
+        onDownload={handlePreviewDownload}
+      />
     </div>
   );
 }

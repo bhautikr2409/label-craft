@@ -115,7 +115,7 @@ export default function AddLogoWorkspace({
               disabled={!canRun}
               className="w-full rounded-xl bg-violet-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:opacity-40 disabled:hover:bg-violet-600 sm:w-auto"
             >
-              {isProcessing ? 'Adding logo…' : 'Add logo & Download'}
+              {isProcessing ? 'Adding logo…' : 'Add logo & Preview'}
             </button>
           </>
         )}

@@ -7,6 +7,7 @@ import {
   trackFileUpload,
   trackProcessComplete,
 } from '../../../lib/analytics';
+import { useDocumentPreview } from '../../../hooks/useDocumentPreview';
 import { sortMeeshoLabelsAndDownload } from '../utils/sortMeeshoLabels';
 
 const TOOL_ID = 'meesho-sort';
@@ -16,7 +17,7 @@ function createId() {
 }
 
 /**
- * Multi-PDF Meesho labels: upload → sort (SKU, courier) → crop → download.
+ * Multi-PDF Meesho labels: upload → sort (SKU, courier) → crop → preview.
  */
 export function useMeeshoSort() {
   const [files, setFiles] = useState([]);
@@ -26,6 +27,7 @@ export function useMeeshoSort() {
   const [outputSizeId, setOutputSizeId] = useState('4x6');
   const filesRef = useRef(files);
   filesRef.current = files;
+  const { preview, isPreviewOpen, openPreview, closePreview } = useDocumentPreview();
 
   const addFiles = useCallback(async (incoming) => {
     const accepted = validateMergeFiles(incoming, filesRef.current);
@@ -88,30 +90,42 @@ export function useMeeshoSort() {
     setLastSummary(null);
     setProgress({ phase: 'reading', current: 0, total: 0 });
 
+    let result = null;
     try {
-      const result = await sortMeeshoLabelsAndDownload(ready, {
+      result = await sortMeeshoLabelsAndDownload(ready, {
         onProgress: setProgress,
         outputSizeId,
       });
-      if (result?.ok) {
-        setLastSummary(result.summary);
-        const pages = result.totalPages || 0;
-        trackProcessComplete(TOOL_ID, {
-          page_count: pages,
-          file_count: ready.length,
-          output_size: outputSizeId,
-        });
-        trackDownload(TOOL_ID, {
-          page_count: pages,
-          file_count: ready.length,
-          output_size: outputSizeId,
-        });
-      }
     } finally {
       setIsProcessing(false);
       setProgress({ phase: null, current: 0, total: 0 });
     }
-  }, [outputSizeId]);
+
+    if (result?.ok && result.blob) {
+      setLastSummary(result.summary);
+      const pages = result.totalPages || 0;
+      trackProcessComplete(TOOL_ID, {
+        page_count: pages,
+        file_count: ready.length,
+        output_size: outputSizeId,
+      });
+      openPreview({
+        blob: result.blob,
+        filename: result.filename,
+        platformLabel: 'MEESHO',
+        pageCount: pages,
+      });
+    }
+  }, [outputSizeId, openPreview]);
+
+  const handlePreviewDownload = useCallback(() => {
+    const ready = filesRef.current.filter((item) => item.status === 'ready');
+    trackDownload(TOOL_ID, {
+      page_count: preview?.pageCount || 0,
+      file_count: ready.length,
+      output_size: outputSizeId,
+    });
+  }, [preview, outputSizeId]);
 
   const totalPages = files.reduce(
     (sum, item) => sum + (item.pageCount > 0 ? item.pageCount : 0),
@@ -130,5 +144,9 @@ export function useMeeshoSort() {
     removeFile,
     clearFiles,
     runSort,
+    preview,
+    isPreviewOpen,
+    closePreview,
+    handlePreviewDownload,
   };
 }

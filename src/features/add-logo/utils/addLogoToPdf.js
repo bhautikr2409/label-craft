@@ -31,15 +31,6 @@ export const LOGO_SIZES = {
   },
 };
 
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 function isJpeg(file) {
   return file.type === 'image/jpeg' || file.type === 'image/jpg' || /\.jpe?g$/i.test(file.name);
 }
@@ -288,12 +279,18 @@ export async function addLogoAndDownload(pdfFile, logoFile, options = {}) {
     const outBytes = await pdfDoc.save();
     const blob = new Blob([outBytes], { type: 'application/pdf' });
     const name = pdfFile.name.replace(/\.pdf$/i, '') || 'document';
-    triggerDownload(blob, `${name}-with-logo.pdf`);
+    const filename = `${name}-with-logo.pdf`;
 
     toast.success(
-      `Logo added to ${pages.length} page${pages.length === 1 ? '' : 's'} · ready to download`
+      `Logo added to ${pages.length} page${pages.length === 1 ? '' : 's'} · ready to preview`
     );
-    return true;
+    return {
+      ok: true,
+      blob,
+      filename,
+      pageCount: pages.length,
+      platformId: 'logo',
+    };
   } catch (error) {
     console.error('Add logo error:', error);
     const msg = String(error?.message || '');

@@ -5,6 +5,7 @@ import {
   trackFileUpload,
   trackProcessComplete,
 } from '../../../lib/analytics';
+import { useDocumentPreview } from '../../../hooks/useDocumentPreview';
 import { parseAmazonOrderPairs, processAmazonOrderPDF } from '../utils/processAmazonPdf';
 import { validateAmazonPdfFile } from '../utils/validateAmazonPdf';
 
@@ -22,6 +23,7 @@ export function useAmazonSku() {
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const { preview, isPreviewOpen, openPreview, closePreview } = useDocumentPreview();
 
   const handleFileSelect = useCallback(async (selectedFile) => {
     if (!selectedFile) return;
@@ -79,31 +81,43 @@ export function useAmazonSku() {
       }
 
       setIsProcessing(true);
+      let result = null;
       try {
-        const ok = await processAmazonOrderPDF(file, {
+        result = await processAmazonOrderPDF(file, {
           positionId,
           customX,
           customY,
           includeOrderCount,
           ...options,
         });
-        if (ok) {
-          const orders = Math.floor(pageCount / 2);
-          trackProcessComplete(TOOL_ID, {
-            page_count: pageCount,
-            order_count: orders,
-          });
-          trackDownload(TOOL_ID, {
-            page_count: pageCount,
-            order_count: orders,
-          });
-        }
       } finally {
         setIsProcessing(false);
       }
+
+      if (result?.ok && result.blob) {
+        const orders = Math.floor(pageCount / 2);
+        trackProcessComplete(TOOL_ID, {
+          page_count: pageCount,
+          order_count: orders,
+        });
+        openPreview({
+          blob: result.blob,
+          filename: result.filename,
+          platformLabel: 'AMAZON',
+          pageCount: result.pageCount,
+        });
+      }
     },
-    [file, pageCount, positionId, customX, customY, includeOrderCount]
+    [file, pageCount, positionId, customX, customY, includeOrderCount, openPreview]
   );
+
+  const handlePreviewDownload = useCallback(() => {
+    const orders = Math.floor(pageCount / 2);
+    trackDownload(TOOL_ID, {
+      page_count: pageCount,
+      order_count: orders,
+    });
+  }, [pageCount]);
 
   return {
     file,
@@ -125,5 +139,9 @@ export function useAmazonSku() {
     handleFileSelect,
     handleClearFile,
     handleProcessAndDownload,
+    preview,
+    isPreviewOpen,
+    closePreview,
+    handlePreviewDownload,
   };
 }

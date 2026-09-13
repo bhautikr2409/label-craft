@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import DocumentPreviewModal from '../../../components/preview/DocumentPreviewModal';
 import ToolSeoSection from '../../../components/seo/ToolSeoSection';
 import { useAddLogo } from '../hooks/useAddLogo';
 import AddLogoImageUpload from './AddLogoImageUpload';
@@ -8,7 +9,7 @@ import AddLogoWorkspace from './AddLogoWorkspace';
 const STEPS = [
   { n: '1', title: 'Upload PDF', text: 'Add your label or document' },
   { n: '2', title: 'Upload logo', text: 'JPG, PNG, or WEBP image' },
-  { n: '3', title: 'Download', text: 'Logo stamped on every page' },
+  { n: '3', title: 'Preview', text: 'Check, then print or download' },
 ];
 
 export default function AddLogoPDF() {
@@ -30,6 +31,10 @@ export default function AddLogoPDF() {
     clearAll,
     clearPdfKeepLogo,
     runAddLogo,
+    preview,
+    isPreviewOpen,
+    closePreview,
+    handlePreviewDownload,
   } = useAddLogo();
 
   return (
@@ -116,6 +121,16 @@ export default function AddLogoPDF() {
           </p>
         </div>
       </div>
+
+      <DocumentPreviewModal
+        open={isPreviewOpen}
+        url={preview?.url}
+        blob={preview?.blob}
+        filename={preview?.filename}
+        platformLabel={preview?.platformLabel}
+        onClose={closePreview}
+        onDownload={handlePreviewDownload}
+      />
     </div>
   );
 }

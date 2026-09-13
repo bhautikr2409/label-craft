@@ -1,20 +1,9 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import toast from 'react-hot-toast';
 import '../../../lib/pdf/worker';
+import { rebuildPdfAtExportDpi } from '../../../lib/pdf/highDpiRebuild';
 import { pdfjs } from 'react-pdf';
 import { extractSKUFromDescription, extractTextFromInvoicePage, extractQtyFromInvoiceText } from './extractSkuFromInvoice';
-
-/**
- * Trigger file download in browser.
- */
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 /**
  * Presets for positioning the SKU box in clean white areas of Amazon shipping labels.
@@ -53,7 +42,7 @@ export const SKU_POSITIONS = {
  * Add extracted SKU text to the blank white area of a shipping label page.
  *
  * @param {import('pdf-lib').PDFPage} page - Shipping label page (PDFPage)
- * @param {string} skuText - Text string to draw (e.g., "SKU: floral perfume")
+ * @param {string} skuText - Text string to draw (e.g., "floral perfume = 1 Qty")
  * @param {import('pdf-lib').PDFFont} font - Loaded PDF font
  * @param {Object} [options]
  * @param {string} [options.positionId] - Preset ID ('aboveStationBox', 'centerWhite', 'rightAboveCarrier', 'topRight', 'custom')
@@ -160,7 +149,7 @@ export async function parseAmazonOrderPairs(file) {
       return {
         ...pair,
         skuCount: pair.qty,
-        displaySku: pair.sku ? `SKU: ${pair.sku} = ${pair.qty} Qty` : 'SKU: Not Found',
+        displaySku: pair.sku ? `${pair.sku} = ${pair.qty} Qty` : 'Not Found',
       };
     });
   } catch (error) {
@@ -173,7 +162,7 @@ export async function parseAmazonOrderPairs(file) {
 /**
  * Process Amazon Order PDF:
  * Pairs every Odd page (Shipping Label) with Even page (Invoice),
- * extracts SKU from invoice page, adds `SKU: <extractedSKU> = <count> order` to shipping label,
+ * extracts SKU from invoice page, adds `<extractedSKU> = <count> Qty` to shipping label,
  * keeps invoice unchanged, and downloads processed PDF.
  *
  * @param {File} pdfFile
@@ -227,10 +216,10 @@ export async function processAmazonOrderPDF(pdfFile, options = {}) {
       const shippingLabelPage = pdfDoc.getPage(i);
       const { sku, qty } = extractedOrders[orderIdx];
 
-      let skuText = 'SKU: Not Found';
+      let skuText = 'Not Found';
       if (sku) {
         const includeCount = options.includeOrderCount !== false;
-        skuText = includeCount ? `SKU: ${sku} = ${qty} Qty` : `SKU: ${sku}`;
+        skuText = includeCount ? `${sku} = ${qty} Qty` : `${sku}`;
       } else {
         missingSkuCount++;
         console.warn(`Order #${orderIdx + 1} (Pages ${i + 1}-${i + 2}): SKU not found in invoice text.`);
@@ -261,10 +250,19 @@ export async function processAmazonOrderPDF(pdfFile, options = {}) {
       finalPdf.addPage(page);
     }
 
-    const outputBytes = await finalPdf.save();
+    // Flatten at ~300 DPI so zoom/print stays sharp (Amazon labels are often image-based)
+    const stampedBytes = await finalPdf.save({ useObjectStreams: false });
+    let outputBytes;
+    try {
+      outputBytes = await rebuildPdfAtExportDpi(stampedBytes, { dpi: 300 });
+    } catch (hqError) {
+      console.warn('High-DPI Amazon rebuild failed, using vector PDF', hqError);
+      outputBytes = stampedBytes;
+    }
+
     const blob = new Blob([outputBytes], { type: 'application/pdf' });
     const baseName = pdfFile.name.replace(/\.pdf$/i, '') || 'amazon-orders';
-    triggerDownload(blob, `${baseName}-sku-injected.pdf`);
+    const filename = `${baseName}-sku-injected.pdf`;
 
     if (missingSkuCount > 0) {
       toast.success(
@@ -275,7 +273,13 @@ export async function processAmazonOrderPDF(pdfFile, options = {}) {
       toast.success(`Successfully injected SKUs into ${totalOrders} shipping label${totalOrders === 1 ? '' : 's'}!`);
     }
 
-    return true;
+    return {
+      ok: true,
+      blob,
+      filename,
+      pageCount: sortedPageIndices.length,
+      platformId: 'amazon',
+    };
   } catch (error) {
     console.error('Error processing Amazon PDF:', error);
     const msg = String(error?.message || '');

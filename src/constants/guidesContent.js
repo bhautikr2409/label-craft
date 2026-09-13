@@ -130,7 +130,7 @@ export const GUIDES = [
         paragraphs: [
           'Open Amazon SKU Injector and upload the multi-order PDF. EcomCrop validates even page count, then previews each pair with the extracted SKU tag.',
           'Choose where the SKU box should sit (above the station/routing area is a common default). Optionally include item quantity in the stamp. Download the processed PDF and check that barcodes are still clear.',
-          'If a pair shows “SKU: Not Found”, open that invoice page and confirm the SKU is in parentheses or clearly labeled. You can still print; missing tags are marked so you can write them by hand.',
+          'If a pair shows “Not Found”, open that invoice page and confirm the SKU is in parentheses or clearly labeled. You can still print; missing tags are marked so you can write them by hand.',
         ],
       },
       {

@@ -4,19 +4,6 @@ import { loadPdfDocument } from '../../label-crop/utils/detectLabel';
 import { cropMeeshoPageIntoDoc } from '../../label-crop/utils/cropLabels';
 import { extractMeeshoPageMeta } from './extractMeeshoMeta';
 
-function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  // Delay revoke — instant revoke can cancel the download in some browsers.
-  setTimeout(() => URL.revokeObjectURL(url), 4000);
-}
-
 function compareLabelPages(a, b) {
   const skuCmp = String(a.sku).localeCompare(String(b.sku), undefined, {
     sensitivity: 'base',
@@ -47,9 +34,9 @@ export function buildSortSummary(sortedPages) {
 }
 
 /**
- * Upload Meesho labels → sort by SKU/courier → Meesho crop (4×6) → download.
- * @param {{ id: string, file: File }[]} items
- * @param {{ onProgress?: Function, outputSizeId?: string }} [options]
+ * Upload Meesho labels → sort by SKU/courier → Meesho crop (4×6).
+ * Returns { ok, blob, filename, sorted, summary, totalPages } for preview
+ * (does not auto-download).
  */
 export async function sortMeeshoLabelsAndDownload(items, options = {}) {
   const { onProgress, outputSizeId = '4x6' } = options;
@@ -139,12 +126,12 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
       return false;
     }
 
-    // 4) Download
+    // 4) Build PDF for preview
     onProgress?.({ phase: 'saving', current: sorted.length, total: sorted.length });
     const outBytes = await outDoc.save();
     const blob = new Blob([outBytes], { type: 'application/pdf' });
     const stamp = new Date().toISOString().slice(0, 10);
-    triggerDownload(blob, `meesho-labels-sorted-cropped-${stamp}.pdf`);
+    const filename = `meesho-labels-sorted-cropped-${stamp}.pdf`;
 
     const summary = buildSortSummary(sorted);
     const failNote =
@@ -155,7 +142,15 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
       `Sorted & cropped ${croppedOk} label${croppedOk === 1 ? '' : 's'} · ${summary.length} SKU${summary.length === 1 ? '' : 's'}${failNote}`
     );
 
-    return { ok: true, sorted, summary, totalPages: croppedOk };
+    return {
+      ok: true,
+      blob,
+      filename,
+      sorted,
+      summary,
+      totalPages: croppedOk,
+      platformId: 'meesho',
+    };
   } catch (error) {
     console.error('Meesho sort+crop error:', error);
     const msg = String(error?.message || '');

@@ -6,13 +6,14 @@ import {
   trackFileUpload,
   trackProcessComplete,
 } from '../../../lib/analytics';
+import { useDocumentPreview } from '../../../hooks/useDocumentPreview';
 import { addLogoAndDownload, getPdfPageCount } from '../utils/addLogoToPdf';
 import { validateLogoFile } from '../utils/validateLogo';
 
 const TOOL_ID = 'add-logo';
 
 /**
- * Flow: upload PDF → upload logo → size → stamp bottom white space on all pages.
+ * Flow: upload PDF → upload logo → size → stamp → Document Preview.
  */
 export function useAddLogo() {
   const [pdfFile, setPdfFile] = useState(null);
@@ -23,6 +24,7 @@ export function useAddLogo() {
   const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
   const [sizeId, setSizeId] = useState('medium');
   const [isProcessing, setIsProcessing] = useState(false);
+  const { preview, isPreviewOpen, openPreview, closePreview } = useDocumentPreview();
 
   useEffect(() => {
     if (!pdfFile) {
@@ -120,22 +122,33 @@ export function useAddLogo() {
       return;
     }
     setIsProcessing(true);
+    let result = null;
     try {
-      const ok = await addLogoAndDownload(pdfFile, logoFile, { sizeId });
-      if (ok) {
-        trackProcessComplete(TOOL_ID, {
-          page_count: pageCount,
-          logo_size: sizeId,
-        });
-        trackDownload(TOOL_ID, {
-          page_count: pageCount,
-          logo_size: sizeId,
-        });
-      }
+      result = await addLogoAndDownload(pdfFile, logoFile, { sizeId });
     } finally {
       setIsProcessing(false);
     }
-  }, [pdfFile, logoFile, pageCount, sizeId]);
+
+    if (result?.ok && result.blob) {
+      trackProcessComplete(TOOL_ID, {
+        page_count: pageCount,
+        logo_size: sizeId,
+      });
+      openPreview({
+        blob: result.blob,
+        filename: result.filename,
+        platformLabel: 'LOGO',
+        pageCount: result.pageCount,
+      });
+    }
+  }, [pdfFile, logoFile, pageCount, sizeId, openPreview]);
+
+  const handlePreviewDownload = useCallback(() => {
+    trackDownload(TOOL_ID, {
+      page_count: pageCount,
+      logo_size: sizeId,
+    });
+  }, [pageCount, sizeId]);
 
   return {
     pdfFile,
@@ -155,5 +168,9 @@ export function useAddLogo() {
     clearAll,
     clearPdfKeepLogo,
     runAddLogo,
+    preview,
+    isPreviewOpen,
+    closePreview,
+    handlePreviewDownload,
   };
 }

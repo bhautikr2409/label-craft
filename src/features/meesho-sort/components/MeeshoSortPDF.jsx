@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import DocumentPreviewModal from '../../../components/preview/DocumentPreviewModal';
 import ToolSeoSection from '../../../components/seo/ToolSeoSection';
 import { useMeeshoSort } from '../hooks/useMeeshoSort';
 import MeeshoSortUpload from './MeeshoSortUpload';
@@ -7,7 +8,7 @@ import MeeshoSortWorkspace from './MeeshoSortWorkspace';
 const STEPS = [
   { n: '1', title: 'Upload', text: 'Add one or more Meesho label PDFs' },
   { n: '2', title: 'Sort', text: 'Pages ordered by SKU, then courier' },
-  { n: '3', title: 'Crop & download', text: 'Meesho crop to thermal size' },
+  { n: '3', title: 'Preview', text: 'Cropped labels — print or download' },
 ];
 
 export default function MeeshoSortPDF() {
@@ -23,6 +24,10 @@ export default function MeeshoSortPDF() {
     removeFile,
     clearFiles,
     runSort,
+    preview,
+    isPreviewOpen,
+    closePreview,
+    handlePreviewDownload,
   } = useMeeshoSort();
 
   return (
@@ -38,7 +43,7 @@ export default function MeeshoSortPDF() {
             </h1>
             <p className="mx-auto max-w-xl text-base text-slate-600 sm:text-lg">
               Upload multiple Meesho label PDFs. We sort by SKU and shipping company, crop each
-              label like Label Crop, then download one print-ready PDF.
+              label like Label Crop, then open a preview so you can print or download.
             </p>
           </div>
 
@@ -94,6 +99,16 @@ export default function MeeshoSortPDF() {
           </p>
         </div>
       </div>
+
+      <DocumentPreviewModal
+        open={isPreviewOpen}
+        url={preview?.url}
+        blob={preview?.blob}
+        filename={preview?.filename}
+        platformLabel={preview?.platformLabel}
+        onClose={closePreview}
+        onDownload={handlePreviewDownload}
+      />
     </div>
   );
 }
