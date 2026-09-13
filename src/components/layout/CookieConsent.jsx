@@ -44,9 +44,9 @@ export default function CookieConsent() {
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-relaxed text-slate-600">
-          {SITE_NAME} uses cookies for essential site functions, Google Analytics (traffic
-          measurement), and may use Google AdSense cookies to show ads. PDF files you process stay
-          in your browser and are never uploaded.{' '}
+          {SITE_NAME} uses cookies for essential site functions, Google Analytics and Vercel
+          Analytics (traffic measurement), and may use Google AdSense cookies to show ads. PDF files
+          you process stay in your browser and are never uploaded.{' '}
           <Link to="/privacy" className="font-semibold text-teal-700 hover:underline">
             Privacy Policy
           </Link>

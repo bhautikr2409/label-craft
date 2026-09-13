@@ -64,7 +64,7 @@ export default function PrivacyPolicy() {
               </li>
               <li>
                 <strong>Cookies:</strong> identifiers used for essential preferences, Google
-                Analytics, and advertising partners such as Google AdSense.
+                Analytics, Vercel Analytics, and advertising partners such as Google AdSense.
               </li>
             </ul>
           </section>
@@ -102,7 +102,25 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">5. Google AdSense & cookies</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">5. Vercel Analytics</h2>
+            <p className="mb-3">
+              When you accept the cookie notice, {SITE_NAME} may also use Vercel Web Analytics to
+              collect aggregated page-view and visitor metrics for the hosted site. This does{' '}
+              <strong>not</strong> include shipping-label PDF contents. See{' '}
+              <a
+                href="https://vercel.com/docs/analytics/privacy-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-teal-700 hover:underline"
+              >
+                Vercel&apos;s Analytics privacy documentation
+              </a>{' '}
+              for details.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">6. Google AdSense & cookies</h2>
             <p className="mb-3">
               This site may use Google AdSense to display advertisements. Third-party vendors,
               including Google, use cookies to serve ads based on your prior visits to this and other
@@ -138,7 +156,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">6. Data security</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">7. Data security</h2>
             <p>
               Because documents stay on your machine, they are not exposed through server
               transmission for processing. Site traffic uses HTTPS/TLS. No method of transmission
@@ -148,7 +166,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">7. Children&apos;s privacy</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">8. Children&apos;s privacy</h2>
             <p>
               {SITE_NAME} is not directed at children under 13. We do not knowingly collect personal
               information from children.
@@ -156,7 +174,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">8. Your rights</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">9. Your rights</h2>
             <p>
               Depending on your location, you may have rights to access or delete analytical or
               contact data we hold. We do not store your PDF files, so there is no document data to
@@ -165,7 +183,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="mb-3 text-xl font-bold text-slate-800">9. Contact</h2>
+            <h2 className="mb-3 text-xl font-bold text-slate-800">10. Contact</h2>
             <p>
               Questions about this policy? Email{' '}
               <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-teal-700 hover:underline">
