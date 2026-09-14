@@ -36,13 +36,13 @@ export function useAmazonSku() {
     setError(null);
 
     try {
-      // Reject Flipkart / Meesho / unknown before Amazon pair validation
       const pdf = await loadPdfDocument(selectedFile);
       const detected = await identifyLabelMarketplace(pdf, selectedFile.name);
       await pdf.destroy?.();
 
-      if (detected.id !== 'amazon') {
-        const message = 'This tool only accepts Amazon labels.';
+      // Only reject if positively identified as Flipkart or Meesho with non-low confidence
+      if ((detected.id === 'flipkart' || detected.id === 'meesho') && detected.confidence !== 'low') {
+        const message = `This looks like a ${detected.label} label PDF, not Amazon.`;
         setError(message);
         toast.error(message, { duration: 5000, id: 'amazon-sku-only' });
         setIsLoading(false);

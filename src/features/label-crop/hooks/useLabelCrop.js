@@ -87,66 +87,70 @@ export function useLabelCrop() {
     (async () => {
       try {
         const pdf = await loadPdfDocument(file);
-        if (cancelled) return;
-        if (!pdf.numPages) {
-          setLoadError('Could not read this PDF.');
-          toast.error('Could not read this PDF.');
+        try {
+          if (cancelled) return;
+          if (!pdf.numPages) {
+            setLoadError('Could not read this PDF.');
+            toast.error('Could not read this PDF.');
+            setIsLoading(false);
+            return;
+          }
+
+          const detected = await identifyLabelMarketplace(pdf, file.name);
+          if (cancelled) return;
+
+          // Amazon labels do not belong in Label Crop
+          if (detected.id === 'amazon' && detected.confidence !== 'low') {
+            setFile(null);
+            setPageCount(0);
+            setDetectedMarketplace(null);
+            setIsLoading(false);
+            setLoadError(null);
+            toast.error(
+              'This looks like an Amazon label PDF. Use Amazon SKU Injector instead of Label Crop.',
+              { duration: 6000 }
+            );
+            return;
+          }
+
+          // Wrong Flipkart ↔ Meesho choice: auto-switch so crop uses the right path
+          let activePlatform = platformId;
+          if (
+            (detected.id === 'flipkart' || detected.id === 'meesho') &&
+            detected.confidence !== 'low' &&
+            platformId &&
+            detected.id !== platformId
+          ) {
+            activePlatform = detected.id;
+            setPlatformId(detected.id);
+            toast.success(
+              `Detected ${detected.label} labels — switched from ${PLATFORM_LABEL[platformId]}.`,
+              { duration: 5000 }
+            );
+          } else if (
+            (detected.id === 'flipkart' || detected.id === 'meesho') &&
+            detected.id === platformId
+          ) {
+            toast.success(`Detected ${detected.label} labels.`, { duration: 2500 });
+          } else if (detected.id === 'unknown') {
+            toast(
+              `Couldn’t confirm marketplace. Cropping as ${PLATFORM_LABEL[platformId] || 'selected type'} — double-check if results look wrong.`,
+              { duration: 5000, icon: '⚠️' }
+            );
+          }
+
+          setDetectedMarketplace(detected);
+          setPageCount(pdf.numPages);
           setIsLoading(false);
-          return;
+          trackFileUpload(TOOL_ID, {
+            file_count: 1,
+            platform: activePlatform || platformId,
+            detected: detected.id,
+            detect_confidence: detected.confidence,
+          });
+        } finally {
+          await pdf.destroy?.();
         }
-
-        const detected = await identifyLabelMarketplace(pdf, file.name);
-        if (cancelled) return;
-
-        // Amazon labels do not belong in Label Crop
-        if (detected.id === 'amazon' && detected.confidence !== 'low') {
-          setFile(null);
-          setPageCount(0);
-          setDetectedMarketplace(null);
-          setIsLoading(false);
-          setLoadError(null);
-          toast.error(
-            'This looks like an Amazon label PDF. Use Amazon SKU Injector instead of Label Crop.',
-            { duration: 6000 }
-          );
-          return;
-        }
-
-        // Wrong Flipkart ↔ Meesho choice: auto-switch so crop uses the right path
-        let activePlatform = platformId;
-        if (
-          (detected.id === 'flipkart' || detected.id === 'meesho') &&
-          detected.confidence !== 'low' &&
-          platformId &&
-          detected.id !== platformId
-        ) {
-          activePlatform = detected.id;
-          setPlatformId(detected.id);
-          toast.success(
-            `Detected ${detected.label} labels — switched from ${PLATFORM_LABEL[platformId]}.`,
-            { duration: 5000 }
-          );
-        } else if (
-          (detected.id === 'flipkart' || detected.id === 'meesho') &&
-          detected.id === platformId
-        ) {
-          toast.success(`Detected ${detected.label} labels.`, { duration: 2500 });
-        } else if (detected.id === 'unknown') {
-          toast(
-            `Couldn’t confirm marketplace. Cropping as ${PLATFORM_LABEL[platformId] || 'selected type'} — double-check if results look wrong.`,
-            { duration: 5000, icon: '⚠️' }
-          );
-        }
-
-        setDetectedMarketplace(detected);
-        setPageCount(pdf.numPages);
-        setIsLoading(false);
-        trackFileUpload(TOOL_ID, {
-          file_count: 1,
-          platform: activePlatform || platformId,
-          detected: detected.id,
-          detect_confidence: detected.confidence,
-        });
       } catch (error) {
         console.error(error);
         if (!cancelled) {

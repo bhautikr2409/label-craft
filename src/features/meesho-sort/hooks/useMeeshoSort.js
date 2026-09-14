@@ -25,6 +25,7 @@ export function useMeeshoSort() {
   const [progress, setProgress] = useState({ phase: null, current: 0, total: 0 });
   const [lastSummary, setLastSummary] = useState(null);
   const [outputSizeId, setOutputSizeId] = useState('4x6');
+  const [sortBy, setSortBy] = useState('sku');
   const filesRef = useRef(files);
   filesRef.current = files;
   const abortRef = useRef(null);
@@ -102,6 +103,7 @@ export function useMeeshoSort() {
       result = await sortMeeshoLabelsAndDownload(ready, {
         onProgress: setProgress,
         outputSizeId,
+        sortBy,
         signal: controller.signal,
       });
     } finally {
@@ -117,6 +119,7 @@ export function useMeeshoSort() {
         page_count: pages,
         file_count: ready.length,
         output_size: outputSizeId,
+        sort_by: sortBy,
       });
       openPreview({
         blob: result.blob,
@@ -125,7 +128,7 @@ export function useMeeshoSort() {
         pageCount: pages,
       });
     }
-  }, [outputSizeId, openPreview]);
+  }, [outputSizeId, sortBy, openPreview]);
 
   const handlePreviewDownload = useCallback(() => {
     const ready = filesRef.current.filter((item) => item.status === 'ready');
@@ -133,8 +136,9 @@ export function useMeeshoSort() {
       page_count: preview?.pageCount || 0,
       file_count: ready.length,
       output_size: outputSizeId,
+      sort_by: sortBy,
     });
-  }, [preview, outputSizeId]);
+  }, [preview, outputSizeId, sortBy]);
 
   const totalPages = files.reduce(
     (sum, item) => sum + (item.pageCount > 0 ? item.pageCount : 0),
@@ -149,6 +153,8 @@ export function useMeeshoSort() {
     totalPages,
     outputSizeId,
     setOutputSizeId,
+    sortBy,
+    setSortBy,
     addFiles,
     removeFile,
     clearFiles,

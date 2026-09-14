@@ -20,6 +20,8 @@ export default function MeeshoSortPDF() {
     totalPages,
     outputSizeId,
     setOutputSizeId,
+    sortBy,
+    setSortBy,
     addFiles,
     removeFile,
     clearFiles,
@@ -83,6 +85,8 @@ export default function MeeshoSortPDF() {
               lastSummary={lastSummary}
               outputSizeId={outputSizeId}
               setOutputSizeId={setOutputSizeId}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
               onAddFiles={addFiles}
               onRemove={removeFile}
               onClear={clearFiles}

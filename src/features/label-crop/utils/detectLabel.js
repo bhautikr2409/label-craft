@@ -724,12 +724,17 @@ export async function identifyLabelMarketplace(pdf, fileName = '') {
   }
 
   try {
-    const page = await pdf.getPage(1);
-    const content = await page.getTextContent({ disableCombineTextItems: false });
-    const joined = (content.items || [])
-      .map((item) => String(item.str || ''))
-      .join(' ')
-      .toLowerCase();
+    const pageCount = pdf.numPages || 1;
+    let joined = '';
+    for (let p = 1; p <= Math.min(2, pageCount); p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent({ disableCombineTextItems: false });
+      const text = (content.items || [])
+        .map((item) => String(item.str || ''))
+        .join(' ')
+        .toLowerCase();
+      joined += ' ' + text;
+    }
 
     const bump = (re, amount, target) => {
       if (!re.test(joined)) return;
@@ -761,11 +766,15 @@ export async function identifyLabelMarketplace(pdf, fileName = '') {
     // Amazon
     bump(/\bamazon\b/, 6, 'amazon');
     bump(/\bamzn\b/, 4, 'amazon');
-    bump(/\basin\b/, 4, 'amazon');
+    bump(/\basin\b/, 5, 'amazon');
+    bump(/\batspl\b|\bats\b/, 5, 'amazon');
+    bump(/easy\s*ship/, 5, 'amazon');
+    bump(/shipment\s*id|order\s*id/, 3, 'amazon');
+    bump(/stvt|mhyd|hybo/, 4, 'amazon');
     bump(/sold\s*by/, 2, 'amazon');
     bump(/ship(?:ping)?\s*from/, 2, 'amazon');
-    bump(/amazon\.in|amazon\s*shipping/, 3, 'amazon');
-    bump(/fulfilichannel|fulfillment\s*by\s*amazon|\bfba\b/, 3, 'amazon');
+    bump(/amazon\.in|amazon\s*shipping/, 4, 'amazon');
+    bump(/fulfilichannel|fulfillment\s*by\s*amazon|\bfba\b/, 4, 'amazon');
     bump(/this\s*shipment\s*contains/, 2, 'amazon');
   } catch (error) {
     console.warn('Marketplace identify failed', error);

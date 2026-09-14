@@ -4,7 +4,20 @@ import { loadPdfDocument } from '../../label-crop/utils/detectLabel';
 import { cropMeeshoPageIntoDoc } from '../../label-crop/utils/cropLabels';
 import { extractMeeshoPageMeta } from './extractMeeshoMeta';
 
-function compareLabelPages(a, b) {
+export const SORT_MODES = {
+  sku: {
+    id: 'sku',
+    label: 'SKU & Courier',
+    hint: 'Group by Product SKU first, then Courier company',
+  },
+  courier: {
+    id: 'courier',
+    label: 'Delivery Partner (Courier)',
+    hint: 'Group by Shipping Courier (Delhivery, Expressbees, etc.)',
+  },
+};
+
+function compareLabelPagesBySku(a, b) {
   const skuCmp = String(a.sku).localeCompare(String(b.sku), undefined, {
     sensitivity: 'base',
     numeric: true,
@@ -15,10 +28,21 @@ function compareLabelPages(a, b) {
   });
 }
 
+function compareLabelPagesByCourier(a, b) {
+  const courierCmp = String(a.courier).localeCompare(String(b.courier), undefined, {
+    sensitivity: 'base',
+  });
+  if (courierCmp !== 0) return courierCmp;
+  return String(a.sku).localeCompare(String(b.sku), undefined, {
+    sensitivity: 'base',
+    numeric: true,
+  });
+}
+
 /**
- * Build a summary tree: SKU → courier → count
+ * Build a summary tree by SKU: SKU → courier → count
  */
-export function buildSortSummary(sortedPages) {
+export function buildSortSummaryBySku(sortedPages) {
   const map = new Map();
   for (const page of sortedPages) {
     if (!map.has(page.sku)) map.set(page.sku, new Map());
@@ -27,9 +51,29 @@ export function buildSortSummary(sortedPages) {
   }
 
   return [...map.entries()].map(([sku, couriers]) => ({
+    mode: 'sku',
     sku,
     total: [...couriers.values()].reduce((a, b) => a + b, 0),
     couriers: [...couriers.entries()].map(([courier, count]) => ({ courier, count })),
+  }));
+}
+
+/**
+ * Build a summary tree by Courier: Courier → SKU → count
+ */
+export function buildSortSummaryByCourier(sortedPages) {
+  const map = new Map();
+  for (const page of sortedPages) {
+    if (!map.has(page.courier)) map.set(page.courier, new Map());
+    const skus = map.get(page.courier);
+    skus.set(page.sku, (skus.get(page.sku) || 0) + 1);
+  }
+
+  return [...map.entries()].map(([courier, skus]) => ({
+    mode: 'courier',
+    courier,
+    total: [...skus.values()].reduce((a, b) => a + b, 0),
+    skus: [...skus.entries()].map(([sku, count]) => ({ sku, count })),
   }));
 }
 
@@ -39,7 +83,7 @@ export function buildSortSummary(sortedPages) {
  * (does not auto-download).
  */
 export async function sortMeeshoLabelsAndDownload(items, options = {}) {
-  const { onProgress, outputSizeId = '4x6', signal } = options;
+  const { onProgress, outputSizeId = '4x6', sortBy = 'sku', signal } = options;
 
   const assertNotCancelled = () => {
     if (signal?.aborted) {
@@ -54,68 +98,78 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
     return false;
   }
 
+  const activeJsDocs = new Map();
+
   try {
     assertNotCancelled();
     onProgress?.({ phase: 'reading', current: 0, total: 0 });
 
-    const jsDocs = new Map();
-    const loaded = [];
+    const itemMap = new Map();
+    const pages = [];
 
+    // 1) Read SKU + courier from every page of each PDF sequentially.
+    // Destroy pdfjsDoc immediately after reading each file to keep RAM usage minimal.
     for (const item of items) {
       assertNotCancelled();
+      itemMap.set(item.id, item);
+
       const pdf = await loadPdfDocument(item.file);
-      jsDocs.set(item.id, pdf);
-      loaded.push({ item, pdf, pageCount: pdf.numPages });
+      try {
+        const pageCount = pdf.numPages;
+        for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
+          assertNotCancelled();
+
+          const pdfPage = await pdf.getPage(pageNumber);
+          let meta;
+          try {
+            meta = await extractMeeshoPageMeta(pdfPage);
+          } catch (error) {
+            console.warn('Meesho page meta failed', error);
+            meta = { sku: 'Unknown SKU', courier: 'Unknown' };
+          }
+
+          pages.push({
+            fileId: item.id,
+            pageIndex: pageNumber - 1,
+            pageNumber,
+            sku: meta.sku,
+            courier: meta.courier,
+          });
+
+          onProgress?.({ phase: 'reading', current: pages.length, total: pages.length });
+        }
+      } finally {
+        await pdf.destroy?.();
+      }
     }
 
-    const totalPages = loaded.reduce((sum, d) => sum + d.pageCount, 0);
-    if (totalPages < 1) {
+    if (pages.length < 1) {
       toast.error('No pages found in the selected PDFs.');
       return false;
     }
 
-    // 1) Read SKU + courier from every page
-    const pages = [];
-    let scanned = 0;
-
-    for (const { item, pdf, pageCount } of loaded) {
-      for (let pageNumber = 1; pageNumber <= pageCount; pageNumber++) {
-        assertNotCancelled();
-        scanned += 1;
-        onProgress?.({ phase: 'reading', current: scanned, total: totalPages });
-
-        const pdfPage = await pdf.getPage(pageNumber);
-        let meta;
-        try {
-          meta = await extractMeeshoPageMeta(pdfPage);
-        } catch (error) {
-          console.warn('Meesho page meta failed', error);
-          meta = { sku: 'Unknown SKU', courier: 'Unknown' };
-        }
-
-        pages.push({
-          fileId: item.id,
-          pageIndex: pageNumber - 1,
-          pageNumber,
-          sku: meta.sku,
-          courier: meta.courier,
-        });
-      }
-    }
-
-    // 2) Sort: SKU first, then shipping company
-    const sorted = [...pages].sort(compareLabelPages);
+    // 2) Sort: Delivery partner (courier) or SKU based on user selection
+    const isCourierSort = sortBy === 'courier';
+    const sorted = [...pages].sort(
+      isCourierSort ? compareLabelPagesByCourier : compareLabelPagesBySku
+    );
 
     // 3) Crop each sorted page with Meesho Label Crop path (high-DPI raster + rotate)
     const outDoc = await PDFDocument.create();
     let croppedOk = 0;
+
     for (let i = 0; i < sorted.length; i++) {
       assertNotCancelled();
       const entry = sorted[i];
       onProgress?.({ phase: 'cropping', current: i + 1, total: sorted.length });
 
-      const pdfjsDoc = jsDocs.get(entry.fileId);
-      if (!pdfjsDoc) continue;
+      let pdfjsDoc = activeJsDocs.get(entry.fileId);
+      if (!pdfjsDoc) {
+        const item = itemMap.get(entry.fileId);
+        if (!item) continue;
+        pdfjsDoc = await loadPdfDocument(item.file);
+        activeJsDocs.set(entry.fileId, pdfjsDoc);
+      }
 
       try {
         await cropMeeshoPageIntoDoc(
@@ -148,13 +202,16 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
     const stamp = new Date().toISOString().slice(0, 10);
     const filename = `meesho-labels-sorted-cropped-${stamp}.pdf`;
 
-    const summary = buildSortSummary(sorted);
+    const summary = isCourierSort
+      ? buildSortSummaryByCourier(sorted)
+      : buildSortSummaryBySku(sorted);
+    const summaryLabel = isCourierSort ? 'Courier' : 'SKU';
     const failNote =
       croppedOk < sorted.length
         ? ` · ${sorted.length - croppedOk} page${sorted.length - croppedOk === 1 ? '' : 's'} skipped`
         : '';
     toast.success(
-      `Sorted & cropped ${croppedOk} label${croppedOk === 1 ? '' : 's'} · ${summary.length} SKU${summary.length === 1 ? '' : 's'}${failNote}`
+      `Sorted & cropped ${croppedOk} label${croppedOk === 1 ? '' : 's'} · ${summary.length} ${summaryLabel}${summary.length === 1 ? '' : 's'}${failNote}`
     );
 
     return {
@@ -179,6 +236,15 @@ export async function sortMeeshoLabelsAndDownload(items, options = {}) {
       toast.error('Could not sort and crop Meesho labels.');
     }
     return false;
+  } finally {
+    for (const pdfDoc of activeJsDocs.values()) {
+      try {
+        await pdfDoc.destroy?.();
+      } catch {
+        /* ignore */
+      }
+    }
+    activeJsDocs.clear();
   }
 }
 

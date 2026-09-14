@@ -66,57 +66,68 @@ async function embedLogoImage(pdfDoc, file) {
 }
 
 /**
- * Find the last content row on a rendered page (fraction from top, 0–1).
- * Returns null if the page looks empty / full.
+ * Find the last content row on each page of a rendered PDF (fraction from top, 0–1).
+ * Returns an array of numbers (one fraction per page).
  */
-async function detectContentBottomFrac(pdfFile) {
+async function detectAllPagesContentBottomFrac(pdfFile) {
   try {
     const data = await pdfFile.arrayBuffer();
     const pdf = await pdfjs.getDocument({ data: data.slice(0) }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 1.25 });
+    const numPages = pdf.numPages;
     const canvas = document.createElement('canvas');
-    canvas.width = Math.floor(viewport.width);
-    canvas.height = Math.floor(viewport.height);
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    await page.render({ canvasContext: ctx, viewport }).promise;
+    const fractions = [];
 
-    const { width, height } = canvas;
-    const { data: pixels } = ctx.getImageData(0, 0, width, height);
-    const x0 = Math.floor(width * 0.04);
-    const x1 = Math.floor(width * 0.96);
-    const span = Math.max(1, x1 - x0 + 1);
+    try {
+      for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.25 });
+        canvas.width = Math.floor(viewport.width);
+        canvas.height = Math.floor(viewport.height);
 
-    let lastSolid = -1;
-    for (let y = height - 1; y >= Math.floor(height * 0.15); y--) {
-      let ink = 0;
-      const row = y * width * 4;
-      for (let x = x0; x <= x1; x++) {
-        const i = row + x * 4;
-        if (pixels[i + 3] < 20) continue;
-        if (
-          pixels[i] < WHITE_THRESHOLD ||
-          pixels[i + 1] < WHITE_THRESHOLD ||
-          pixels[i + 2] < WHITE_THRESHOLD
-        ) {
-          ink += 1;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+
+        const { width, height } = canvas;
+        const { data: pixels } = ctx.getImageData(0, 0, width, height);
+        const x0 = Math.floor(width * 0.04);
+        const x1 = Math.floor(width * 0.96);
+        const span = Math.max(1, x1 - x0 + 1);
+
+        let lastSolid = -1;
+        for (let y = height - 1; y >= Math.floor(height * 0.15); y--) {
+          let ink = 0;
+          const row = y * width * 4;
+          for (let x = x0; x <= x1; x++) {
+            const i = row + x * 4;
+            if (pixels[i + 3] < 20) continue;
+            if (
+              pixels[i] < WHITE_THRESHOLD ||
+              pixels[i + 1] < WHITE_THRESHOLD ||
+              pixels[i + 2] < WHITE_THRESHOLD
+            ) {
+              ink += 1;
+            }
+          }
+          if (ink / span >= ROW_INK_MIN) {
+            lastSolid = y;
+            break;
+          }
         }
+
+        fractions.push(lastSolid < 0 ? null : (lastSolid + 1) / height);
       }
-      if (ink / span >= ROW_INK_MIN) {
-        lastSolid = y;
-        break;
-      }
+    } finally {
+      canvas.width = 0;
+      canvas.height = 0;
+      await pdf.destroy?.();
     }
 
-    canvas.width = 0;
-    canvas.height = 0;
-    await pdf.destroy?.();
-
-    if (lastSolid < 0) return null;
-    return (lastSolid + 1) / height;
+    return fractions;
   } catch (error) {
     console.warn('White-space detect failed', error);
-    return null;
+    return [];
   }
 }
 
@@ -242,7 +253,7 @@ export async function addLogoAndDownload(pdfFile, logoFile, options = {}) {
   }
 
   try {
-    const contentBottomFrac = await detectContentBottomFrac(pdfFile);
+    const pageFractions = await detectAllPagesContentBottomFrac(pdfFile);
     const bytes = await pdfFile.arrayBuffer();
     const pdfDoc = await PDFDocument.load(bytes);
     const pages = pdfDoc.getPages();
@@ -255,8 +266,11 @@ export async function addLogoAndDownload(pdfFile, logoFile, options = {}) {
     const imgW = logoImage.width;
     const imgH = logoImage.height;
 
-    for (const page of pages) {
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
       const { width, height } = page.getSize();
+      const contentBottomFrac = pageFractions[i] ?? null;
+
       // Per-page box so aspect ratio stays correct and nothing is clipped
       const box = computeLogoBox(
         width,

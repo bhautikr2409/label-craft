@@ -91,7 +91,7 @@ async function extractFlipkartTotalQty(pdfPage) {
  */
 function stampQtyBottomCenter(page, qty, font) {
   const n = Number(qty);
-  if (!page || !font || !Number.isFinite(n) || n < 1) return;
+  if (!page || !font || !Number.isFinite(n) || n <= 1) return;
 
   const text = `QTY. ${n}`;
   const { width } = page.getSize();
@@ -934,7 +934,7 @@ async function cropFlipkartPage(
     },
   );
 
-  if (qtyFont) {
+  if (qtyFont && totalQty > 1) {
     const pages = outDoc.getPages();
     const last = pages[pages.length - 1];
     stampQtyBottomCenter(last, totalQty, qtyFont);
@@ -963,11 +963,13 @@ export async function cropLabelsAndDownload(file, options = {}) {
     }
   };
 
+  let pdfjsDoc = null;
+
   try {
     assertNotCancelled();
     const bytes = new Uint8Array(await file.arrayBuffer());
     assertNotCancelled();
-    const pdfjsDoc = await loadPdfDocument(
+    pdfjsDoc = await loadPdfDocument(
       new File([bytes], file.name, {
         type: file.type || "application/pdf",
       }),
@@ -1078,5 +1080,13 @@ export async function cropLabelsAndDownload(file, options = {}) {
       toast.error("Could not crop labels from this PDF.");
     }
     return false;
+  } finally {
+    if (pdfjsDoc) {
+      try {
+        await pdfjsDoc.destroy?.();
+      } catch {
+        /* ignore */
+      }
+    }
   }
 }

@@ -1,4 +1,4 @@
-import { formatFileSize } from '../utils/sortMeeshoLabels';
+import { formatFileSize, SORT_MODES } from '../utils/sortMeeshoLabels';
 import { OUTPUT_SIZES } from '../../label-crop/utils/detectLabel';
 
 export default function MeeshoSortWorkspace({
@@ -9,6 +9,8 @@ export default function MeeshoSortWorkspace({
   lastSummary,
   outputSizeId,
   setOutputSizeId,
+  sortBy = 'sku',
+  setSortBy,
   onAddFiles,
   onRemove,
   onClear,
@@ -45,7 +47,9 @@ export default function MeeshoSortWorkspace({
             {totalPages > 0 ? ` · ${totalPages} page${totalPages === 1 ? '' : 's'}` : ''}
           </h2>
           <p className="mt-0.5 text-xs text-slate-500">
-            Sort by SKU → courier, then Meesho crop
+            {sortBy === 'courier'
+              ? 'Sort by delivery partner (courier), then Meesho crop'
+              : 'Sort by SKU → courier, then Meesho crop'}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -109,6 +113,34 @@ export default function MeeshoSortWorkspace({
         </ul>
 
         <fieldset>
+          <legend className="mb-3 text-sm font-semibold text-slate-900">Sort order</legend>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {Object.values(SORT_MODES).map((option) => {
+              const active = sortBy === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setSortBy?.(option.id)}
+                  disabled={isProcessing}
+                  className={[
+                    'rounded-xl border px-4 py-3 text-left transition-colors',
+                    active
+                      ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500'
+                      : 'border-slate-200 bg-white hover:border-orange-300',
+                  ].join(' ')}
+                >
+                  <span className="block text-sm font-semibold text-slate-900">
+                    {option.label}
+                  </span>
+                  <span className="mt-1 block text-xs text-slate-500">{option.hint}</span>
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+
+        <fieldset>
           <legend className="mb-3 text-sm font-semibold text-slate-900">Output size</legend>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {Object.values(OUTPUT_SIZES).map((option) => {
@@ -166,18 +198,26 @@ export default function MeeshoSortWorkspace({
             <p className="mb-2 text-sm font-semibold text-slate-900">Last run summary</p>
             <ul className="max-h-48 space-y-2 overflow-y-auto text-xs text-slate-600">
               {lastSummary.map((group) => (
-                <li key={group.sku}>
-                  <span className="font-semibold text-slate-800">{group.sku}</span>
+                <li key={group.mode === 'courier' ? group.courier : group.sku}>
+                  <span className="font-semibold text-slate-800">
+                    {group.mode === 'courier' ? group.courier : group.sku}
+                  </span>
                   <span className="text-slate-400">
                     {' '}
                     · {group.total} page{group.total === 1 ? '' : 's'}
                   </span>
                   <ul className="mt-1 ml-3 list-disc space-y-0.5">
-                    {group.couriers.map((c) => (
-                      <li key={`${group.sku}-${c.courier}`}>
-                        {c.courier} ({c.count})
-                      </li>
-                    ))}
+                    {group.mode === 'courier'
+                      ? group.skus.map((s) => (
+                          <li key={`${group.courier}-${s.sku}`}>
+                            {s.sku} ({s.count})
+                          </li>
+                        ))
+                      : group.couriers.map((c) => (
+                          <li key={`${group.sku}-${c.courier}`}>
+                            {c.courier} ({c.count})
+                          </li>
+                        ))}
                   </ul>
                 </li>
               ))}
